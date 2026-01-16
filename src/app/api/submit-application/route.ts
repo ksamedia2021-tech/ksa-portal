@@ -62,6 +62,11 @@ export async function POST(req: NextRequest) {
             }, { status: 400 });
         }
 
+        // Capture Metadata
+        const ip = req.headers.get('x-forwarded-for') || 'unknown';
+        const userAgent = req.headers.get('user-agent') || '';
+        const deviceType = /mobile/i.test(userAgent) ? 'Mobile' : 'Desktop';
+
         // 4. Insert into Supabase
         // Map camelCase to snake_case for DB
         const dbData = {
@@ -77,7 +82,9 @@ export async function POST(req: NextRequest) {
             preferred_campus: data.preferredCampus || (courseTrack === 'DIPLOMA' ? 'Thika' : null),
             mpesa_code: data.mpesaCode,
             status: 'PENDING',
-            email_sent: false
+            email_sent: false,
+            ip_address: ip,
+            device_type: deviceType,
         };
 
         const { data: inserted, error: dbError } = await supabase
