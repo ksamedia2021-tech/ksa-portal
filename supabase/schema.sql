@@ -1,5 +1,8 @@
+-- Enable UUID extension
+create extension if not exists "uuid-ossp";
+
 -- KSA APPLICANTS TABLE
-create table applicants (
+create table if not exists applicants (
   id uuid default uuid_generate_v4() primary key,
   created_at timestamp with time zone default timezone('utc'::text, now()),
   
@@ -29,3 +32,10 @@ create table applicants (
   status text default 'PENDING' check (status in ('PENDING', 'APPROVED', 'REJECTED')),
   email_sent boolean default false
 );
+
+-- Turn off RLS for simplicity in this demo (or enable with policy if preferred)
+alter table applicants enable row level security;
+
+-- Allow public access for this demo app (since we use anon key for inserts)
+create policy "Enable insert for all users" on applicants for insert with check (true);
+create policy "Enable read for all users" on applicants for select using (true);

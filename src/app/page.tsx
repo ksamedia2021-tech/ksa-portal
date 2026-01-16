@@ -98,7 +98,10 @@ export default function Home() {
             />
           )}
           {step === 4 && (
-            <StepSuccess onReset={handleReset} />
+            <StepSuccess
+              onReset={handleReset}
+              courseTrack={(formData.courseTrack || (calculatedAge >= 21 ? 'CBET' : 'DIPLOMA')) as 'CBET' | 'DIPLOMA'}
+            />
           )}
         </CardContent>
       </Card>

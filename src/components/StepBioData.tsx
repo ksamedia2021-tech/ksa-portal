@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { personalDetailsSchema, PersonalDetailsData } from '@/lib/schemas';
 import { Input, Label, Button, Alert } from '@/components/ui/common';
+import { cn } from '@/lib/utils';
 
 interface StepBioDataProps {
     defaultValues?: Partial<PersonalDetailsData>;
