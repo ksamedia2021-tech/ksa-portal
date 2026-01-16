@@ -49,7 +49,20 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 3. Insert into Supabase
+        // 3. Check for Duplicates (National ID)
+        const { data: existingApp } = await supabase
+            .from('applicants')
+            .select('id')
+            .eq('national_id', data.nationalId)
+            .single();
+
+        if (existingApp) {
+            return NextResponse.json({
+                error: 'Application already exists for this National ID'
+            }, { status: 400 });
+        }
+
+        // 4. Insert into Supabase
         // Map camelCase to snake_case for DB
         const dbData = {
             full_name: data.fullName,
