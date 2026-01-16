@@ -4,17 +4,55 @@
   --color-ksa-green: #006837;
   --color-ksa-gold: #D4AF37;
   --color-ksa-white: #ffffff;
+
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-slide-up: slide-up 0.5s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
 }
 
 :root {
   --background: #f8fafc;
-  /* Slate-50 */
   --foreground: #1e293b;
-  /* Slate-800 */
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  background-image:
+    radial-gradient(#e5e7eb 1px, transparent 1px),
+    linear-gradient(to bottom right, #f8fafc, #f1f5f9, #ecfccb);
+  /* Slight green tint at bottom right */
+  background-size: 20px 20px, 100% 100%;
+  background-attachment: fixed;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  @apply bg-white/80 backdrop-blur-md border border-white/60 shadow-xl;
+}
+
+.input-glass {
+  @apply bg-white/70 border-slate-200 focus:bg-white focus:ring-2 focus:ring-ksa-green/20 focus:border-ksa-green transition-all duration-300 shadow-sm;
 }

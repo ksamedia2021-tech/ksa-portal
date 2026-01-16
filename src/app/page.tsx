@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/common';
+import MotionWrapper from '@/components/ui/MotionWrapper';
 import StepBioData from '@/components/StepBioData';
 import StepDetails from '@/components/StepDetails';
 import StepPayment from '@/components/StepPayment';
@@ -59,50 +60,60 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Card className="shadow-lg border-t-4 border-t-ksa-green">
+      <Card className="border-t-4 border-t-ksa-green">
         <CardHeader>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-slate-800">Student Application</h2>
-            {step < 4 && <span className="text-sm font-medium text-slate-500">Step {step} of 3</span>}
+            {step < 4 && <span className="text-sm font-medium text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">Step {step} of 3</span>}
           </div>
 
           {step < 4 && (
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
               <div
-                className="bg-ksa-gold h-full transition-all duration-300 ease-in-out"
+                className="bg-ksa-gold h-full transition-all duration-500 ease-out"
                 style={{ width: `${(step / 3) * 100}%` }}
               />
             </div>
           )}
         </CardHeader>
         <CardContent>
-          {step === 1 && (
-            <StepBioData
-              defaultValues={formData as PersonalDetailsData}
-              onNext={handleBioDataNext}
-            />
-          )}
-          {step === 2 && (
-            <StepDetails
-              age={calculatedAge}
-              defaultValues={formData as AcademicDetailsData}
-              onNext={handleDetailsNext}
-              onBack={() => setStep(1)}
-            />
-          )}
-          {step === 3 && (
-            <StepPayment
-              onNext={handlePaymentNext}
-              onBack={() => setStep(2)}
-              isSubmitting={isSubmitting}
-            />
-          )}
-          {step === 4 && (
-            <StepSuccess
-              onReset={handleReset}
-              courseTrack={(formData.courseTrack || (calculatedAge >= 21 ? 'CBET' : 'DIPLOMA')) as 'CBET' | 'DIPLOMA'}
-            />
-          )}
+          <div className="min-h-[400px]">
+            {step === 1 && (
+              <MotionWrapper key="step1">
+                <StepBioData
+                  defaultValues={formData as PersonalDetailsData}
+                  onNext={handleBioDataNext}
+                />
+              </MotionWrapper>
+            )}
+            {step === 2 && (
+              <MotionWrapper key="step2">
+                <StepDetails
+                  age={calculatedAge}
+                  defaultValues={formData as AcademicDetailsData}
+                  onNext={handleDetailsNext}
+                  onBack={() => setStep(1)}
+                />
+              </MotionWrapper>
+            )}
+            {step === 3 && (
+              <MotionWrapper key="step3">
+                <StepPayment
+                  onNext={handlePaymentNext}
+                  onBack={() => setStep(2)}
+                  isSubmitting={isSubmitting}
+                />
+              </MotionWrapper>
+            )}
+            {step === 4 && (
+              <MotionWrapper key="step4">
+                <StepSuccess
+                  onReset={handleReset}
+                  courseTrack={(formData.courseTrack || (calculatedAge >= 21 ? 'CBET' : 'DIPLOMA')) as 'CBET' | 'DIPLOMA'}
+                />
+              </MotionWrapper>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
