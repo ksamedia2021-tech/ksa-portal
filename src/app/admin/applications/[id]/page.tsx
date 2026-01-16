@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button, Card, CardContent, CardHeader } from '@/components/ui/common';
 import { ArrowLeft, Check, X, Shield, Smartphone, Monitor, Clock, MapPin } from 'lucide-react';
 
-export default function ApplicationDetailsPage({ params }: { params: { id: string } }) {
+export default function ApplicationDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const [app, setApp] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -18,13 +19,13 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
         } else {
             fetchApp();
         }
-    }, []);
+    }, [id]);
 
     const fetchApp = async () => {
         const { data, error } = await supabase
             .from('applicants')
             .select('*')
-            .eq('id', params.id)
+            .eq('id', id)
             .single();
 
         if (error) {
@@ -40,7 +41,7 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
         const { error } = await supabase
             .from('applicants')
             .update({ status: newStatus })
-            .eq('id', params.id);
+            .eq('id', id);
 
         if (error) {
             alert('Error updating status');
