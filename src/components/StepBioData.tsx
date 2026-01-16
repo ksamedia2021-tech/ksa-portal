@@ -58,8 +58,9 @@ export default function StepBioData({ defaultValues, onNext }: StepBioDataProps)
                 </div>
 
                 <div>
-                    <Label htmlFor="nationalId">National ID (Optional)</Label>
+                    <Label htmlFor="nationalId">National ID</Label>
                     <Input id="nationalId" {...register('nationalId')} placeholder="12345678" />
+                    {errors.nationalId && <p className="text-red-500 text-xs mt-1">{errors.nationalId.message}</p>}
                 </div>
 
                 <div className="md:col-span-2">

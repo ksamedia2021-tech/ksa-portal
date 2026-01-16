@@ -4,7 +4,7 @@ export const personalDetailsSchema = z.object({
     fullName: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().email("Invalid email address"),
     phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
-    nationalId: z.string().optional(),
+    nationalId: z.string().min(1, "National ID is required"),
     dob: z.string().refine((date) => new Date(date).toString() !== 'Invalid Date', {
         message: "Valid date is required",
     }),
