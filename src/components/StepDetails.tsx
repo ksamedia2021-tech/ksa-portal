@@ -84,9 +84,7 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
                         {errors.preferredCampus && <p className="text-red-500 text-xs mt-1">{errors.preferredCampus.message}</p>}
                     </div>
 
-                    <Alert variant="warning" className="bg-yellow-50 text-yellow-800 border-yellow-200">
-                        Disclaimer: Eligible for UK Internship after 12 months subject to interviews.
-                    </Alert>
+
                 </div>
             ) : (
                 // Diploma Fields
