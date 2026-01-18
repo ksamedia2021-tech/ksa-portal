@@ -69,7 +69,7 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
                             <Button onClick={() => updateStatus('APPROVED')} className="bg-green-600 hover:bg-green-700 text-white">
                                 <Check size={18} className="mr-2" /> Approve
                             </Button>
-                            <Button onClick={() => updateStatus('REJECTED')} variant="destructive">
+                            <Button onClick={() => updateStatus('REJECTED')} variant="primary" className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
                                 <X size={18} className="mr-2" /> Reject
                             </Button>
                         </>

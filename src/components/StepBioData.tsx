@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { personalDetailsSchema, PersonalDetailsData } from '@/lib/schemas';
-import { Input, Label, Button, Alert } from '@/components/ui/common';
+import { Input, Label, Button, Alert, Select } from '@/components/ui/common';
 import { cn } from '@/lib/utils';
 
 interface StepBioDataProps {
@@ -61,6 +61,17 @@ export default function StepBioData({ defaultValues, onNext }: StepBioDataProps)
                     <Label htmlFor="nationalId">National ID</Label>
                     <Input id="nationalId" {...register('nationalId')} placeholder="12345678" />
                     {errors.nationalId && <p className="text-red-500 text-xs mt-1">{errors.nationalId.message}</p>}
+                </div>
+
+                <div>
+                    <Label htmlFor="county">County of Residence</Label>
+                    <Select id="county" {...register('county')}>
+                        <option value="">-- Select County --</option>
+                        {['Mombasa', 'Kwale', 'Kilifi', 'Tana River', 'Lamu', 'Taita/Taveta', 'Garissa', 'Wajir', 'Mandera', 'Marsabit', 'Isiolo', 'Meru', 'Tharaka-Nithi', 'Embu', 'Kitui', 'Machakos', 'Makueni', 'Nyandarua', 'Nyeri', 'Kirinyaga', 'Murang\'a', 'Kiambu', 'Turkana', 'West Pokot', 'Samburu', 'Trans Nzoia', 'Uasin Gishu', 'Elgeyo/Marakwet', 'Nandi', 'Baringo', 'Laikipia', 'Nakuru', 'Narok', 'Kajiado', 'Kericho', 'Bomet', 'Kakamega', 'Vihiga', 'Bungoma', 'Busia', 'Siaya', 'Kisumu', 'Homa Bay', 'Migori', 'Kisii', 'Nyamira', 'Nairobi City'].map(c => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </Select>
+                    {errors.county && <p className="text-red-500 text-xs mt-1">{errors.county.message}</p>}
                 </div>
 
                 <div className="md:col-span-2">

@@ -69,9 +69,45 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
                 </p>
             </div>
 
-            {isCBET ? (
-                // CBET Fields
-                <div className="space-y-4">
+            <div className="space-y-4">
+                {/* 1. Qualification - Visible for Everyone */}
+                <div>
+                    <Label htmlFor="highestQualification">Highest Qualification</Label>
+                    <Select id="highestQualification" {...register('highestQualification')}>
+                        <option value="">-- Select Qualification --</option>
+                        <option value="Degree">Degree</option>
+                        <option value="Diploma">Diploma</option>
+                        <option value="Certificate">Certificate</option>
+                        <option value="KCSE">KCSE Certificate</option>
+                        {isCBET && <option value="CPE/KCPE">CPE/KCPE</option>}
+                        {isCBET && <option value="None">None</option>}
+                    </Select>
+                    {errors.highestQualification && <p className="text-red-500 text-xs mt-1">{errors.highestQualification.message}</p>}
+                </div>
+
+                {/* 2. Grade - Visible for Everyone */}
+                <div>
+                    <Label htmlFor="kcseMeanGrade">KCSE Mean Grade</Label>
+                    <Select id="kcseMeanGrade" {...register('kcseMeanGrade')}>
+                        <option value="">-- Select Grade --</option>
+                        <option value="A">A</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B">B</option>
+                        <option value="B-">B-</option>
+                        <option value="C+">C+</option>
+                        <option value="C">C</option>
+                        <option value="C-">C-</option>
+                        <option value="D+">D+</option>
+                        <option value="D">D (Plain)</option>
+                        <option value="D-">D-</option>
+                        <option value="E">E</option>
+                    </Select>
+                    {errors.kcseMeanGrade && <p className="text-red-500 text-xs mt-1">{errors.kcseMeanGrade.message}</p>}
+                </div>
+
+                {/* 3. Campus Selection or Fixed Display */}
+                {isCBET ? (
                     <div>
                         <Label htmlFor="preferredCampus">Select Preferred Campus</Label>
                         <Select id="preferredCampus" {...register('preferredCampus')}>
@@ -83,48 +119,29 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
                         </Select>
                         {errors.preferredCampus && <p className="text-red-500 text-xs mt-1">{errors.preferredCampus.message}</p>}
                     </div>
-
-
-                </div>
-            ) : (
-                // Diploma Fields
-                <div className="space-y-4">
-                    <div>
-                        <Label htmlFor="kcseMeanGrade">KCSE Mean Grade</Label>
-                        <Select id="kcseMeanGrade" {...register('kcseMeanGrade')}>
-                            <option value="">-- Select Grade --</option>
-                            <option value="A">A</option>
-                            <option value="A-">A-</option>
-                            <option value="B+">B+</option>
-                            <option value="B">B</option>
-                            <option value="B-">B-</option>
-                            <option value="C+">C+</option>
-                            <option value="C">C</option>
-                            <option value="C-">C-</option>
-                            <option value="D+">D+</option>
-                            <option value="D">D (Plain)</option>
-                            <option value="D-">D-</option>
-                            <option value="E">E</option>
-                        </Select>
-                        {errors.kcseMeanGrade && <p className="text-red-500 text-xs mt-1">{errors.kcseMeanGrade.message}</p>}
-                    </div>
-
+                ) : (
                     <div className="opacity-75">
                         <Label>Campus</Label>
                         <div className="p-2 bg-slate-100 border border-slate-200 rounded text-slate-600 text-sm">Thika Campus (Fixed)</div>
                     </div>
+                )}
 
-                    <Alert variant="info">
-                        Diploma requires C- | Certificate requires D Plain
-                    </Alert>
-
-                    {showGradeError && (
-                        <Alert variant="destructive">
-                            Error: Minimum requirement is D Plain. You are not eligible to proceed.
+                {/* 4. Diploma Rules */}
+                {!isCBET && (
+                    <>
+                        <Alert variant="info">
+                            Diploma requires C- | Certificate requires D Plain
                         </Alert>
-                    )}
-                </div>
-            )}
+                        {showGradeError && (
+                            <Alert variant="destructive">
+                                Error: Minimum requirement is D Plain. You are not eligible to proceed.
+                            </Alert>
+                        )}
+                    </>
+                )}
+            </div>
+
+
 
             <div className="flex justify-between pt-4">
                 <Button type="button" variant="outline" onClick={onBack}>Back</Button>

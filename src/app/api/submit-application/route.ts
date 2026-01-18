@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
             full_name: data.fullName,
             phone_number: data.phoneNumber,
             national_id: data.nationalId,
+            county_of_recidence: data.county, // Note: User specified "county_of_recidence" (sic)
             dob: data.dob,
             calculated_age: age,
             email: data.email,

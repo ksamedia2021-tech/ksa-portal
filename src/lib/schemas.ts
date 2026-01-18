@@ -5,6 +5,7 @@ export const personalDetailsSchema = z.object({
     email: z.string().email("Invalid email address"),
     phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
     nationalId: z.string().min(1, "National ID is required"),
+    county: z.string().min(1, "County of residence is required"),
     dob: z.string().refine((date) => new Date(date).toString() !== 'Invalid Date', {
         message: "Valid date is required",
     }),
@@ -12,8 +13,8 @@ export const personalDetailsSchema = z.object({
 
 export const academicDetailsSchema = z.object({
     courseTrack: z.enum(['CBET', 'DIPLOMA']),
-    highestQualification: z.string().optional(),
-    kcseMeanGrade: z.enum(['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'E']).optional(),
+    highestQualification: z.string().min(1, "Highest qualification is required"),
+    kcseMeanGrade: z.enum(['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'E']),
     preferredCampus: z.enum(['Nyeri', 'Thika', 'Ugenya', 'Ainabkoi']).optional(),
 });
 
