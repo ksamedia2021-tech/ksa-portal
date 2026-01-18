@@ -38,7 +38,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         pendingApplications: pending || 0,
         cbetCount: cbet || 0,
         diplomaCount: diploma || 0,
-        dailyActivity: [], // Deprecated
         hourlyActivity: hourly || [],
         gradeDistribution: grades || [],
         fraudAlerts: fraud || [],
