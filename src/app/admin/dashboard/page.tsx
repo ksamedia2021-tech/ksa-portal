@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getDashboardStats, DashboardStats } from '@/lib/db';
 import { Button, Card, CardContent, CardHeader, Alert } from '@/components/ui/common';
 import { Users, FileText, LogOut, ArrowRight, Activity, AlertTriangle, TrendingUp, PieChart as PieIcon, Map } from 'lucide-react';
 import {
@@ -10,6 +9,17 @@ import {
     BarChart, Bar,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
+
+interface DashboardStats {
+    totalApplications: number;
+    pendingApplications: number;
+    hourlyActivity: { hour: string; count: number }[];
+    gradeDistribution: { grade: string; count: number }[];
+    fraudAlerts: { mpesa_code: string; count: number }[];
+    campusDemand: { campus: string; count: number }[];
+    cbetCount: number;
+    diplomaCount: number;
+}
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -29,9 +39,22 @@ export default function AdminDashboard() {
     }, [router]);
 
     const fetchData = async () => {
-        const data = await getDashboardStats();
-        setStats(data);
-        setLoading(false);
+        const pin = sessionStorage.getItem('admin_pin');
+        try {
+            const response = await fetch('/api/admin/stats', {
+                headers: { 'x-admin-pin': pin || '' }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch stats');
+
+            const data = await response.json();
+            setStats(data);
+        } catch (error) {
+            console.error(error);
+            // Optional: Redirect to login or show error
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleLogout = () => {

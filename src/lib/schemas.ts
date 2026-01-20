@@ -9,6 +9,7 @@ export const personalDetailsSchema = z.object({
     dob: z.string().refine((date) => new Date(date).toString() !== 'Invalid Date', {
         message: "Valid date is required",
     }),
+    calculatedAge: z.number().optional(),
 });
 
 export const academicDetailsSchema = z.object({
@@ -29,3 +30,5 @@ export type PersonalDetailsData = z.infer<typeof personalDetailsSchema>;
 export type AcademicDetailsData = z.infer<typeof academicDetailsSchema>;
 export type PaymentData = z.infer<typeof paymentSchema>;
 export type ApplicationData = z.infer<typeof applicationSchema>;
+
+export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'NEEDS_CORRECTION';

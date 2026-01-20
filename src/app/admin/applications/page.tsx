@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { Button, Input, Card, Label, Select } from '@/components/ui/common';
 import { Loader2, Check, X, Download, ArrowLeft, Smartphone, Monitor } from 'lucide-react';
 
@@ -46,32 +45,48 @@ export default function ApplicationsPage() {
 
     const fetchApplicants = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('applicants')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const pin = sessionStorage.getItem('admin_pin');
 
-        if (error) {
+        try {
+            const response = await fetch('/api/admin/applications', {
+                headers: {
+                    'x-admin-pin': pin || ''
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch');
+
+            const data = await response.json();
+            setApplicants(data);
+        } catch (error) {
             console.error('Error fetching:', error);
             alert('Failed to fetch data');
-        } else {
-            setApplicants(data as Applicant[]);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const updateStatus = async (id: string, newStatus: 'APPROVED' | 'REJECTED') => {
-        const { error } = await supabase
-            .from('applicants')
-            .update({ status: newStatus })
-            .eq('id', id);
+        const pin = sessionStorage.getItem('admin_pin');
+        try {
+            const response = await fetch('/api/admin/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id,
+                    status: newStatus,
+                    pin
+                })
+            });
 
-        if (error) {
-            alert('Error updating status');
-        } else {
+            if (!response.ok) throw new Error('Update failed');
+
             setApplicants(prev => prev.map(app =>
                 app.id === id ? { ...app, status: newStatus } : app
             ));
+        } catch (error) {
+            console.error(error);
+            alert('Error updating status');
         }
     };
 

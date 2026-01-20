@@ -1,0 +1,40 @@
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+
+// Service Role Client
+const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+        const { nationalId, phone } = body;
+
+        if (!nationalId || !phone) {
+            return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('applicants')
+            .select('*')
+            .eq('national_id', nationalId)
+            .eq('phone_number', phone)
+            .single();
+
+        if (error) {
+            // PGRST116 means no rows found, which is not an error for us
+            if (error.code === 'PGRST116') {
+                return NextResponse.json({ found: false, data: null });
+            }
+            throw error;
+        }
+
+        return NextResponse.json({ found: true, data });
+
+    } catch (err: any) {
+        console.error('Status Check Error:', err);
+        return NextResponse.json({ error: 'Failed to check status' }, { status: 500 });
+    }
+}

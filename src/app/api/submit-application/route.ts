@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { applicationSchema } from '@/lib/schemas';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase Admin Client (Bypasses RLS)
+const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // PDF IDs Config
 const PDF_IDS = {
@@ -50,7 +56,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 3. Check for Duplicates (National ID)
-        const { data: existingApp } = await supabase
+        const { data: existingApp } = await supabaseAdmin
             .from('applicants')
             .select('id')
             .eq('national_id', data.nationalId)
@@ -88,7 +94,7 @@ export async function POST(req: NextRequest) {
             device_type: deviceType,
         };
 
-        const { data: inserted, error: dbError } = await supabase
+        const { data: inserted, error: dbError } = await supabaseAdmin
             .from('applicants')
             .insert([dbData])
             .select()
@@ -115,7 +121,7 @@ export async function POST(req: NextRequest) {
         console.log("---------------------------------------------------");
 
         // In a real scenario, we would update email_sent to true here
-        await supabase.from('applicants').update({ email_sent: true }).eq('id', inserted.id);
+        await supabaseAdmin.from('applicants').update({ email_sent: true }).eq('id', inserted.id);
 
         return NextResponse.json({ success: true, trackingId: inserted.id });
 

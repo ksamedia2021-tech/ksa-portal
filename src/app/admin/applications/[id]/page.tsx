@@ -2,7 +2,6 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { Button, Card, CardContent, CardHeader } from '@/components/ui/common';
 import { ArrowLeft, Check, X, Shield, Smartphone, Monitor, Clock, MapPin } from 'lucide-react';
 
@@ -22,31 +21,58 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
     }, [id]);
 
     const fetchApp = async () => {
-        const { data, error } = await supabase
-            .from('applicants')
-            .select('*')
-            .eq('id', id)
-            .single();
+        const pin = sessionStorage.getItem('admin_pin');
+        try {
+            const response = await fetch(`/api/admin/applications/${id}`, {
+                headers: { 'x-admin-pin': pin || '' }
+            });
 
-        if (error) {
+            if (!response.ok) {
+                throw new Error('Applicant not found');
+            }
+
+            const data = await response.json();
+            setApp(data);
+        } catch (error) {
+            console.error(error);
             alert('Applicant not found');
             router.push('/admin/applications');
-        } else {
-            setApp(data);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
-    const updateStatus = async (newStatus: 'APPROVED' | 'REJECTED') => {
-        const { error } = await supabase
-            .from('applicants')
-            .update({ status: newStatus })
-            .eq('id', id);
+    const [correctionNote, setCorrectionNote] = useState('');
+    const [isCorrectionMode, setIsCorrectionMode] = useState(false);
 
-        if (error) {
-            alert('Error updating status');
-        } else {
-            setApp({ ...app, status: newStatus });
+    const updateStatus = async (newStatus: 'APPROVED' | 'REJECTED' | 'NEEDS_CORRECTION', note?: string) => {
+        const pin = sessionStorage.getItem('admin_pin');
+
+        try {
+            const response = await fetch('/api/admin/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: id,
+                    status: newStatus,
+                    admin_note: note,
+                    pin: pin // Send PIN for validation
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Update failed');
+            }
+
+            console.log('Update success:', result.data);
+            setApp(result.data);
+            setIsCorrectionMode(false);
+
+        } catch (err: any) {
+            console.error('Update Request Failed:', err);
+            alert('Error: ' + err.message);
         }
     };
 
@@ -58,28 +84,70 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
                 <ArrowLeft size={16} className="mr-2" /> Back to List
             </Button>
 
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900">{app.full_name}</h1>
                     <p className="text-slate-500">Application ID: {app.id}</p>
                 </div>
-                <div className="flex gap-2">
-                    {app.status === 'PENDING' ? (
-                        <>
-                            <Button onClick={() => updateStatus('APPROVED')} className="bg-green-600 hover:bg-green-700 text-white">
-                                <Check size={18} className="mr-2" /> Approve
-                            </Button>
-                            <Button onClick={() => updateStatus('REJECTED')} variant="primary" className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
-                                <X size={18} className="mr-2" /> Reject
-                            </Button>
-                        </>
+                <div className="flex flex-col items-end gap-2">
+                    {/* Correction Mode UI */}
+                    {isCorrectionMode ? (
+                        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 w-full md:w-96 space-y-3">
+                            <label className="text-xs font-bold text-yellow-800 uppercase">Correction Note</label>
+                            <textarea
+                                className="w-full p-2 text-sm border-yellow-300 rounded focus:ring-yellow-500 min-h-[80px]"
+                                placeholder="E.g. Your ID photo is blurry. Please re-upload."
+                                value={correctionNote}
+                                onChange={(e) => setCorrectionNote(e.target.value)}
+                            />
+                            <div className="flex gap-2 justify-end">
+                                <Button variant="ghost" onClick={() => setIsCorrectionMode(false)}>Cancel</Button>
+                                <Button
+                                    className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                                    onClick={() => updateStatus('NEEDS_CORRECTION', correctionNote)}
+                                    disabled={!correctionNote}
+                                >
+                                    Send Request
+                                </Button>
+                            </div>
+                        </div>
                     ) : (
-                        <div className={`px-4 py-2 rounded-lg font-bold ${app.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {app.status}
+                        <div className="flex gap-2">
+                            {app.status === 'PENDING' || app.status === 'NEEDS_CORRECTION' ? (
+                                <>
+                                    <Button onClick={() => updateStatus('APPROVED')} className="bg-green-600 hover:bg-green-700 text-white">
+                                        <Check size={18} className="mr-2" /> Approve
+                                    </Button>
+                                    <Button onClick={() => setIsCorrectionMode(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                                        <Shield size={18} className="mr-2" /> Request Correction
+                                    </Button>
+                                    <Button onClick={() => updateStatus('REJECTED')} variant="primary" className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
+                                        <X size={18} className="mr-2" /> Reject
+                                    </Button>
+                                </>
+                            ) : (
+                                <div className={`px-4 py-2 rounded-lg font-bold flex items-center gap-2 
+                                    ${app.status === 'APPROVED' ? 'bg-green-100 text-green-700' : ''}
+                                    ${app.status === 'REJECTED' ? 'bg-red-100 text-red-700' : ''}
+                                    ${app.status === 'NEEDS_CORRECTION' ? 'bg-yellow-100 text-yellow-700' : ''}
+                                `}>
+                                    {app.status === 'APPROVED' && <Check size={18} />}
+                                    {app.status === 'REJECTED' && <X size={18} />}
+                                    {app.status}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Admin Note Display if present */}
+            {app.admin_note && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-yellow-800">
+                    <p className="text-xs font-bold uppercase mb-1">Previous Correction Requested:</p>
+                    <p className="text-sm">"{app.admin_note}"</p>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Personal Info */}
@@ -91,6 +159,7 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
                         <DetailRow label="National ID" value={app.national_id} />
                         <DetailRow label="Date of Birth" value={new Date(app.dob).toLocaleDateString()} />
                         <DetailRow label="Age" value={`${app.calculated_age} Years`} />
+                        <DetailRow label="County" value={app.county_of_recidence || 'N/A'} />
                     </CardContent>
                 </Card>
 

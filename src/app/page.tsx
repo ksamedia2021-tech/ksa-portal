@@ -63,8 +63,12 @@ export default function Home() {
       <Card className="border-t-4 border-t-ksa-green">
         <CardHeader>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-slate-800">Student Application</h2>
-            {step < 4 && <span className="text-sm font-medium text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">Step {step} of 3</span>}
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-bold text-slate-800">Student Application</h2>
+            </div>
+            <div className="flex gap-2 items-center">
+              {step < 4 && <span className="text-sm font-medium text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">Step {step} of 3</span>}
+            </div>
           </div>
 
           {step < 4 && (
@@ -116,6 +120,11 @@ export default function Home() {
           </div>
         </CardContent>
       </Card>
+      <div className="mt-4 text-left">
+        <a href="/check-status" className="text-sm font-medium text-slate-500 hover:text-ksa-green hover:underline">
+          ← Check Application Status
+        </a>
+      </div>
     </div>
   );
 }
