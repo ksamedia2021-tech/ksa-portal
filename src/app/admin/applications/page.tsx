@@ -279,6 +279,8 @@ export default function ApplicationsPage() {
                                 <th className="px-6 py-3">National ID</th>
                                 <th className="px-6 py-3">Track</th>
                                 <th className="px-6 py-3">Campus</th>
+                                <th className="px-6 py-3">County</th>
+                                <th className="px-6 py-3">Age</th>
                                 <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3 text-right">Actions</th>
                             </tr>
@@ -325,6 +327,12 @@ export default function ApplicationsPage() {
                                             </td>
                                             <td className="px-6 py-4 font-medium text-slate-600">
                                                 {app.preferred_campus || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 text-xs">
+                                                {app.county_of_recidence || 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 text-xs font-mono">
+                                                {app.calculated_age}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <StatusBadge status={app.status} />
