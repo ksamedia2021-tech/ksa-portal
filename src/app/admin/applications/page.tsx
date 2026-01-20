@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Input, Card, Label, Select } from '@/components/ui/common';
-import { Loader2, Check, X, Download, ArrowLeft, Smartphone, Monitor } from 'lucide-react';
+import {
+    Loader2, Check, X, Download, ArrowLeft, Smartphone, Monitor,
+    ChevronDown, ChevronRight, User, Mail, Phone, MapPin,
+    CreditCard, GraduationCap, Calendar, Info, ArrowRight
+} from 'lucide-react';
+import React from 'react';
 
 type Applicant = {
     id: string;
@@ -30,6 +35,17 @@ export default function ApplicationsPage() {
     const router = useRouter();
     const [applicants, setApplicants] = useState<Applicant[]>([]);
     const [loading, setLoading] = useState(false);
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+    const toggleRow = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setExpandedRows(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
 
     // Filter States
     const [searchQuery, setSearchQuery] = useState('');
@@ -253,22 +269,16 @@ export default function ApplicationsPage() {
                 </div>
             </Card>
 
-            <Card className="overflow-hidden border-slate-200">
+            <Card className="overflow-hidden border-slate-200 shadow-sm transition-all duration-300">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                         <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
                             <tr>
-                                <th className="px-6 py-3">Date</th>
+                                <th className="w-10 px-4 py-3 text-center"></th>
                                 <th className="px-6 py-3">Applicant</th>
                                 <th className="px-6 py-3">National ID</th>
-                                <th className="px-6 py-3">Contact</th>
                                 <th className="px-6 py-3">Track</th>
                                 <th className="px-6 py-3">Campus</th>
-                                <th className="px-6 py-3">County</th>
-                                <th className="px-6 py-3">Age</th>
-                                <th className="px-6 py-3">Qual.</th>
-                                <th className="px-6 py-3">Grade</th>
-                                <th className="px-6 py-3">Payment</th>
                                 <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3 text-right">Actions</th>
                             </tr>
@@ -276,66 +286,155 @@ export default function ApplicationsPage() {
                         <tbody className="divide-y divide-slate-100">
                             {filteredApplicants.length === 0 ? (
                                 <tr>
-                                    <td colSpan={9} className="px-6 py-8 text-center text-slate-500">No applicants found.</td>
+                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Info className="w-8 h-8 opacity-20" />
+                                            <p>No applicants found matching your filters.</p>
+                                        </div>
+                                    </td>
                                 </tr>
                             ) : (
                                 filteredApplicants.map((app) => (
-                                    <tr key={app.id} className="bg-white hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => router.push(`/admin/applications/${app.id}`)}>
-                                        <td className="px-6 py-4 text-xs text-slate-500 whitespace-nowrap">
-                                            {new Date(app.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-slate-900">
-                                            <div>{app.full_name}</div>
-                                            <div className="text-xs text-slate-500">{app.email}</div>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-xs text-slate-600">
-                                            {app.national_id}
-                                        </td>
-                                        <td className="px-6 py-4 text-xs text-slate-500">
-                                            {app.phone_number}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {app.course_track === 'CBET' ? (
-                                                <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">CBET</span>
-                                            ) : app.course_track === 'DIPLOMA' ? (
-                                                <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">Diploma</span>
-                                            ) : (
-                                                <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-700">Certificate</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {app.preferred_campus || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 text-xs">
-                                            {app.county_of_recidence || 'N/A'}
-                                        </td>
-                                        <td className="px-6 py-4 text-xs font-mono">
-                                            {app.calculated_age}
-                                        </td>
-                                        <td className="px-6 py-4 text-xs">
-                                            {app.highest_qualification || 'N/A'}
-                                        </td>
-                                        <td className="px-6 py-4 text-xs font-bold text-slate-700">
-                                            {app.kcse_mean_grade || 'N/A'}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="font-mono text-xs text-slate-600 font-bold">{app.mpesa_code}</span>
-                                                <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                                    {app.device_type === 'Mobile' ? <Smartphone size={10} /> : <Monitor size={10} />}
-                                                    <span className="truncate max-w-[60px]">{app.ip_address || '?.?.?.?'}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <StatusBadge status={app.status} />
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                                                View Details
-                                            </Button>
-                                        </td>
-                                    </tr>
+                                    <React.Fragment key={app.id}>
+                                        <tr
+                                            className={`bg-white hover:bg-slate-50 transition-colors cursor-pointer ${expandedRows.has(app.id) ? 'bg-slate-50/80' : ''}`}
+                                            onClick={() => router.push(`/admin/applications/${app.id}`)}
+                                        >
+                                            <td className="px-4 py-4 text-center" onClick={(e) => toggleRow(app.id, e)}>
+                                                {expandedRows.has(app.id) ? (
+                                                    <ChevronDown size={18} className="text-ksa-green inline" />
+                                                ) : (
+                                                    <ChevronRight size={18} className="text-slate-400 inline" />
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="font-bold text-slate-900">{app.full_name}</div>
+                                                <div className="text-[10px] text-slate-400 uppercase font-medium">{new Date(app.created_at).toLocaleDateString()}</div>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono text-xs text-slate-600">
+                                                {app.national_id}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {app.course_track === 'CBET' ? (
+                                                    <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">CBET</span>
+                                                ) : app.course_track === 'DIPLOMA' ? (
+                                                    <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">Diploma</span>
+                                                ) : (
+                                                    <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-700">Certificate</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 font-medium text-slate-600">
+                                                {app.preferred_campus || '-'}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <StatusBadge status={app.status} />
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <Button variant="ghost" className="text-blue-600 h-8 font-bold">
+                                                    Open <ArrowRight size={12} className="ml-1" />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                        {/* Expanded Detail Panel */}
+                                        {expandedRows.has(app.id) && (
+                                            <tr className="bg-slate-50/50">
+                                                <td colSpan={7} className="px-12 py-6 border-l-4 border-l-ksa-green bg-gradient-to-r from-slate-50 to-white">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                        {/* Contact & Location */}
+                                                        <div className="space-y-4">
+                                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                                                <User size={12} className="text-ksa-green" /> Personal & Contact
+                                                            </h4>
+                                                            <div className="space-y-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Mail size={14} /></div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Email Address</p>
+                                                                        <p className="text-xs font-medium">{app.email}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-green-50 rounded-lg text-green-600"><Phone size={14} /></div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Phone Number</p>
+                                                                        <p className="text-xs font-medium">{app.phone_number}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-orange-50 rounded-lg text-orange-600"><MapPin size={14} /></div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">County of Residence</p>
+                                                                        <p className="text-xs font-medium">{app.county_of_recidence || 'N/A'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Academic Details */}
+                                                        <div className="space-y-4">
+                                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                                                <GraduationCap size={12} className="text-ksa-green" /> Education & Qualifications
+                                                            </h4>
+                                                            <div className="space-y-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-purple-50 rounded-lg text-purple-600"><Info size={14} /></div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Highest Qualification</p>
+                                                                        <p className="text-xs font-medium">{app.highest_qualification || 'N/A'}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Check size={14} /></div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">KCSE Mean Grade</p>
+                                                                        <p className="text-xs font-bold text-slate-700">{app.kcse_mean_grade || 'N/A'}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-pink-50 rounded-lg text-pink-600"><Calendar size={14} /></div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Calculated Age</p>
+                                                                        <p className="text-xs font-medium">{app.calculated_age} Years Old</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Payment & Meta */}
+                                                        <div className="space-y-4">
+                                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                                                <CreditCard size={12} className="text-ksa-green" /> Submission Metadata
+                                                            </h4>
+                                                            <div className="space-y-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-ksa-gold/10 rounded-lg text-ksa-gold"><Smartphone size={14} /></div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">MPESA Code</p>
+                                                                        <p className="text-xs font-mono font-bold">{app.mpesa_code}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="border-t border-slate-50 pt-3 flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                                                        {app.device_type === 'Mobile' ? <Smartphone size={14} /> : <Monitor size={14} />}
+                                                                        <span className="font-medium whitespace-nowrap">{app.device_type || 'Unknown Device'} • {app.ip_address || '?.?.?.?'}</span>
+                                                                    </div>
+                                                                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${app.email_sent ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}`}>
+                                                                        {app.email_sent ? 'EMAIL SENT ✓' : 'EMAIL PENDING'}
+                                                                    </div>
+                                                                </div>
+                                                                {app.admin_note && (
+                                                                    <div className="mt-2 p-3 bg-amber-50 rounded-lg text-[10px] text-amber-900 border border-amber-100 italic">
+                                                                        <span className="font-bold not-italic block mb-1">ADMIN NOTE:</span>
+                                                                        {app.admin_note}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 ))
                             )}
                         </tbody>
