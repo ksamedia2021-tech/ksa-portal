@@ -18,41 +18,37 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
         defaultValues: {
             ...defaultValues,
             courseTrack: isCBET ? 'CBET' : 'DIPLOMA',
-            preferredCampus: !isCBET ? 'Thika' : undefined // Rule 2: Campus Fixed for Youth
+            preferredCampus: defaultValues?.preferredCampus || (isCBET ? undefined : 'Thika')
         }
     });
 
     // Force set the correct track if it changes (though age shouldn't change here)
     useEffect(() => {
         setValue('courseTrack', isCBET ? 'CBET' : 'DIPLOMA');
-        if (!isCBET) {
-            setValue('preferredCampus', 'Thika');
-        }
     }, [isCBET, setValue]);
 
     const kcseGrade = watch('kcseMeanGrade');
+    const selectedCampus = watch('preferredCampus');
 
-    // Validation Logic for Diploma
-    const isGradeEligible = (grade?: string) => {
-        if (!grade) return true; // Let Zod handle required check if we made it required
-        const gradeValue = {
-            'A': 12, 'A-': 11,
-            'B+': 10, 'B': 9, 'B-': 8,
-            'C+': 7, 'C': 6, 'C-': 5,
+    // Validation Logic for Diploma / Certificate
+    const getAcademicLevel = (grade?: string) => {
+        if (!grade) return null;
+        const gradeValue: Record<string, number> = {
+            'A': 12, 'A-': 11, 'B+': 10, 'B': 9, 'B-': 8, 'C+': 7, 'C': 6, 'C-': 5,
             'D+': 4, 'D': 3, 'D-': 2, 'E': 1
         };
-        // Rule: Diploma requires C- (5) | Certificate requires D Plain (3). PRD says "Minimum requirement is D Plain".
-        // "If Grade < D Plain (e.g. D- or E), show Error"
-
-        // @ts-ignore
         const val = gradeValue[grade] || 0;
-        return val >= 3;
+
+        if (val >= 5) return 'DIPLOMA';
+        if (val >= 3) return 'CERTIFICATE';
+        return 'INELIGIBLE';
     };
 
-    const showGradeError = !isCBET && kcseGrade && !isGradeEligible(kcseGrade);
+    const academicLevel = getAcademicLevel(kcseGrade);
+    const showGradeError = !isCBET && academicLevel === 'INELIGIBLE';
 
     const onSubmit = (data: AcademicDetailsData) => {
-        if (!isCBET && !isGradeEligible(data.kcseMeanGrade)) {
+        if (!isCBET && getAcademicLevel(data.kcseMeanGrade) === 'INELIGIBLE') {
             return; // Block submission
         }
         onNext(data);
@@ -106,38 +102,52 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
                     {errors.kcseMeanGrade && <p className="text-red-500 text-xs mt-1">{errors.kcseMeanGrade.message}</p>}
                 </div>
 
-                {/* 3. Campus Selection or Fixed Display */}
-                {isCBET ? (
-                    <div>
-                        <Label htmlFor="preferredCampus">Select Preferred Campus</Label>
-                        <Select id="preferredCampus" {...register('preferredCampus')}>
-                            <option value="">-- Select Campus --</option>
-                            <option value="Nyeri">Nyeri Campus</option>
-                            <option value="Thika">Thika Campus</option>
-                            <option value="Ugenya">Ugenya Campus</option>
-                            <option value="Ainabkoi">Ainabkoi Campus</option>
-                        </Select>
-                        {errors.preferredCampus && <p className="text-red-500 text-xs mt-1">{errors.preferredCampus.message}</p>}
-                    </div>
-                ) : (
-                    <div className="opacity-75">
-                        <Label>Campus</Label>
-                        <div className="p-2 bg-slate-100 border border-slate-200 rounded text-slate-600 text-sm">Thika Campus (Fixed)</div>
-                    </div>
-                )}
+                {/* 3. Campus Selection */}
+                <div>
+                    <Label htmlFor="preferredCampus">Select Preferred Campus</Label>
+                    <Select id="preferredCampus" {...register('preferredCampus')}>
+                        <option value="">-- Select Campus --</option>
+                        {isCBET ? (
+                            <>
+                                <option value="Nyeri">Nyeri Campus</option>
+                                <option value="Thika">Thika Campus</option>
+                                <option value="Ugenya">Ugenya Campus</option>
+                                <option value="Ainabkoi">Ainabkoi Campus</option>
+                            </>
+                        ) : (
+                            <>
+                                <option value="Thika">Thika Campus</option>
+                                <option value="Ainabkoi">Ainabkoi Campus</option>
+                            </>
+                        )}
+                    </Select>
+                    {errors.preferredCampus && <p className="text-red-500 text-xs mt-1">{errors.preferredCampus.message}</p>}
+                    {!isCBET && (
+                        <p className="text-xs text-slate-500 mt-1">Available campuses for this track: Thika or Ainabkoi</p>
+                    )}
+                </div>
 
-                {/* 4. Diploma Rules */}
-                {!isCBET && (
-                    <>
-                        <Alert variant="info">
-                            Diploma requires C- | Certificate requires D Plain
-                        </Alert>
-                        {showGradeError && (
-                            <Alert variant="destructive">
-                                Error: Minimum requirement is D Plain. You are not eligible to proceed.
+                {/* 4. Track Specific Logic / Information */}
+                {!isCBET && kcseGrade && (
+                    <div className="space-y-3">
+                        {academicLevel === 'DIPLOMA' && (
+                            <Alert variant="info" className="bg-blue-50 border-blue-200">
+                                <div className="font-semibold text-blue-800">Application Level: Diploma</div>
+                                <div className="text-xs text-blue-600">Based on your C- or above grade, you qualify for the Diploma program.</div>
                             </Alert>
                         )}
-                    </>
+                        {academicLevel === 'CERTIFICATE' && (
+                            <Alert variant="info" className="bg-green-50 border-green-200">
+                                <div className="font-semibold text-green-800">Application Level: Certificate</div>
+                                <div className="text-xs text-green-600">Based on your D Plain grade, you qualify for the Certificate program.</div>
+                            </Alert>
+                        )}
+                        {showGradeError && (
+                            <Alert variant="destructive">
+                                Error: Minimum requirement is D Plain. You are not eligible to proceed with this track.
+                            </Alert>
+                        )}
+                    </div>
                 )}
             </div>
 
