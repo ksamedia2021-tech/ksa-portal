@@ -12,7 +12,7 @@ type Applicant = {
     course_track: 'CBET' | 'DIPLOMA' | 'CERTIFICATE';
     calculated_age: number;
     kcse_mean_grade: string | null;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NEEDS_CORRECTION';
     email: string;
     phone_number: string;
     mpesa_code: string;
@@ -20,6 +20,10 @@ type Applicant = {
     ip_address: string | null;
     device_type: string | null;
     preferred_campus: string | null;
+    county_of_recidence: string | null;
+    highest_qualification: string | null;
+    email_sent: boolean;
+    admin_note: string | null;
 };
 
 export default function ApplicationsPage() {
@@ -92,8 +96,12 @@ export default function ApplicationsPage() {
 
     const exportToCSV = () => {
         if (applicants.length === 0) return;
-        const headers = ['ID', 'Created At', 'Full Name', 'Email', 'Phone', 'National ID', 'Track', 'Campus', 'Age', 'Grade', 'MPESA Code', 'IP Address', 'Device', 'Status'];
-        const rows = filteredApplicants.map(app => [ // Export filtered results
+        const headers = [
+            'ID', 'Date', 'Full Name', 'Email', 'Phone', 'National ID',
+            'Track', 'Campus', 'County', 'Qualification', 'Grade', 'Age',
+            'MPESA Code', 'Email Sent', 'Admin Note', 'IP Address', 'Device', 'Status'
+        ];
+        const rows = filteredApplicants.map(app => [
             app.id,
             new Date(app.created_at).toLocaleString(),
             `"${app.full_name}"`,
@@ -102,9 +110,13 @@ export default function ApplicationsPage() {
             app.national_id,
             app.course_track,
             app.preferred_campus || 'N/A',
-            app.calculated_age,
+            app.county_of_recidence || 'N/A',
+            app.highest_qualification || 'N/A',
             app.kcse_mean_grade || '-',
+            app.calculated_age,
             app.mpesa_code,
+            app.email_sent ? 'Yes' : 'No',
+            `"${app.admin_note || ''}"`,
             app.ip_address || 'N/A',
             app.device_type || 'Unknown',
             app.status
@@ -252,7 +264,9 @@ export default function ApplicationsPage() {
                                 <th className="px-6 py-3">Contact</th>
                                 <th className="px-6 py-3">Track</th>
                                 <th className="px-6 py-3">Campus</th>
+                                <th className="px-6 py-3">County</th>
                                 <th className="px-6 py-3">Age</th>
+                                <th className="px-6 py-3">Qual.</th>
                                 <th className="px-6 py-3">Grade</th>
                                 <th className="px-6 py-3">Payment</th>
                                 <th className="px-6 py-3">Status</th>
@@ -292,14 +306,26 @@ export default function ApplicationsPage() {
                                         <td className="px-6 py-4">
                                             {app.preferred_campus || '-'}
                                         </td>
+                                        <td className="px-6 py-4 text-xs">
+                                            {app.county_of_recidence || 'N/A'}
+                                        </td>
                                         <td className="px-6 py-4 text-xs font-mono">
                                             {app.calculated_age}
+                                        </td>
+                                        <td className="px-6 py-4 text-xs">
+                                            {app.highest_qualification || 'N/A'}
                                         </td>
                                         <td className="px-6 py-4 text-xs font-bold text-slate-700">
                                             {app.kcse_mean_grade || 'N/A'}
                                         </td>
-                                        <td className="px-6 py-4 font-mono text-xs text-slate-600">
-                                            {app.mpesa_code}
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-mono text-xs text-slate-600 font-bold">{app.mpesa_code}</span>
+                                                <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                                    {app.device_type === 'Mobile' ? <Smartphone size={10} /> : <Monitor size={10} />}
+                                                    <span className="truncate max-w-[60px]">{app.ip_address || '?.?.?.?'}</span>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <StatusBadge status={app.status} />
@@ -325,10 +351,14 @@ function StatusBadge({ status }: { status: string }) {
         PENDING: "bg-yellow-100 text-yellow-800",
         APPROVED: "bg-green-100 text-green-800",
         REJECTED: "bg-red-100 text-red-800",
+        NEEDS_CORRECTION: "bg-orange-100 text-orange-800",
     };
+
+    const label = status === 'NEEDS_CORRECTION' ? 'Correction Required' : status;
+
     return (
-        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-slate-100 text-slate-800'}`}>
-            {status}
+        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${styles[status] || 'bg-slate-100 text-slate-800'}`}>
+            {label}
         </span>
     );
 }
