@@ -26,6 +26,7 @@ export async function GET(request: Request) {
         const pending = applicants.filter(a => a.status === 'PENDING' || a.status === 'NEEDS_CORRECTION').length;
         const cbet = applicants.filter(a => a.course_track === 'CBET').length;
         const diploma = applicants.filter(a => a.course_track === 'DIPLOMA').length;
+        const certificate = applicants.filter(a => a.course_track === 'CERTIFICATE').length;
 
         // Campus Demand
         const campusCounts: Record<string, number> = {};
@@ -85,6 +86,7 @@ export async function GET(request: Request) {
             pendingApplications: pending,
             cbetCount: cbet,
             diplomaCount: diploma,
+            certificateCount: certificate,
             campusDemand,
             gradeDistribution,
             fraudAlerts,

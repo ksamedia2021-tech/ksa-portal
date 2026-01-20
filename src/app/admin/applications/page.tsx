@@ -214,6 +214,7 @@ export default function ApplicationsPage() {
                             <option value="ALL">All Tracks</option>
                             <option value="CBET">CBET (21+)</option>
                             <option value="DIPLOMA">Diploma (Youth)</option>
+                            <option value="CERTIFICATE">Certificate (Youth)</option>
                         </Select>
                     </div>
 
@@ -282,8 +283,10 @@ export default function ApplicationsPage() {
                                         <td className="px-6 py-4">
                                             {app.course_track === 'CBET' ? (
                                                 <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">CBET</span>
-                                            ) : (
+                                            ) : app.course_track === 'DIPLOMA' ? (
                                                 <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">Diploma</span>
+                                            ) : (
+                                                <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-700">Certificate</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4">

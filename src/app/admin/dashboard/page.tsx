@@ -19,6 +19,7 @@ interface DashboardStats {
     campusDemand: { campus: string; count: number }[];
     cbetCount: number;
     diplomaCount: number;
+    certificateCount: number;
 }
 
 export default function AdminDashboard() {
@@ -68,8 +69,9 @@ export default function AdminDashboard() {
     const pieData = [
         { name: 'CBET', value: stats.cbetCount },
         { name: 'Diploma', value: stats.diplomaCount },
+        { name: 'Certificate', value: stats.certificateCount },
     ];
-    const COLORS = ['#1a936f', '#e6a15c']; // Green, Gold
+    const COLORS = ['#1a936f', '#e6a15c', '#3b82f6']; // Green, Gold, Blue
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto pt-6 px-4 pb-12">

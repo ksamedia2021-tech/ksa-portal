@@ -13,7 +13,7 @@ export const personalDetailsSchema = z.object({
 });
 
 export const academicDetailsSchema = z.object({
-    courseTrack: z.enum(['CBET', 'DIPLOMA']),
+    courseTrack: z.enum(['CBET', 'DIPLOMA', 'CERTIFICATE']),
     highestQualification: z.string().min(1, "Highest qualification is required"),
     kcseMeanGrade: z.enum(['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'E']),
     preferredCampus: z.enum(['Nyeri', 'Thika', 'Ugenya', 'Ainabkoi']).optional(),

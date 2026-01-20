@@ -22,11 +22,6 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
         }
     });
 
-    // Force set the correct track if it changes (though age shouldn't change here)
-    useEffect(() => {
-        setValue('courseTrack', isCBET ? 'CBET' : 'DIPLOMA');
-    }, [isCBET, setValue]);
-
     const kcseGrade = watch('kcseMeanGrade');
     const selectedCampus = watch('preferredCampus');
 
@@ -47,11 +42,28 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
     const academicLevel = getAcademicLevel(kcseGrade);
     const showGradeError = !isCBET && academicLevel === 'INELIGIBLE';
 
+    // Force set the correct track if it changes (though age shouldn't change here)
+    useEffect(() => {
+        if (isCBET) {
+            setValue('courseTrack', 'CBET');
+        } else if (academicLevel && academicLevel !== 'INELIGIBLE') {
+            setValue('courseTrack', academicLevel as any);
+        }
+    }, [isCBET, academicLevel, setValue]);
+
     const onSubmit = (data: AcademicDetailsData) => {
-        if (!isCBET && getAcademicLevel(data.kcseMeanGrade) === 'INELIGIBLE') {
+        const level = getAcademicLevel(data.kcseMeanGrade);
+        if (!isCBET && level === 'INELIGIBLE') {
             return; // Block submission
         }
-        onNext(data);
+
+        // Final sanity check for track
+        const finalData = { ...data };
+        if (!isCBET && level) {
+            finalData.courseTrack = level as any;
+        }
+
+        onNext(finalData);
     };
 
     return (

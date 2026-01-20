@@ -11,6 +11,11 @@ ALTER TABLE applicants DROP CONSTRAINT IF EXISTS applicants_status_check;
 ALTER TABLE applicants ADD CONSTRAINT applicants_status_check 
     CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'NEEDS_CORRECTION'));
 
+-- 1c. Fix course_track CHECK constraint
+ALTER TABLE applicants DROP CONSTRAINT IF EXISTS applicants_course_track_check;
+ALTER TABLE applicants ADD CONSTRAINT applicants_course_track_check 
+    CHECK (course_track IN ('CBET', 'DIPLOMA', 'CERTIFICATE'));
+
 -- 2. Enable RLS and Clean up Policies
 ALTER TABLE applicants ENABLE ROW LEVEL SECURITY;
 
