@@ -33,15 +33,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Application is not open for corrections' }, { status: 403 });
         }
 
-        // 2. Validate Updates against Schema (Partial)
         // We manually construct the safe update object to prevent arbitrary field injection (like status='APPROVED')
+        // NOTE: national_id is NOT included - it cannot be changed (used as verification key)
         const safeUpdate: any = {
             full_name: updates.fullName,
             email: updates.email,
             phone_number: updates.phoneNumber,
-            // national_id: updates.nationalId, // We don't allow changing National ID usually, but maybe? let's stick to simple ones.
-            // Actually users might need to correct national ID. Let's allow it if schema validates.
-            national_id: updates.nationalId,
             county_of_recidence: updates.county,
             dob: updates.dob,
             calculated_age: updates.calculatedAge,

@@ -93,13 +93,16 @@ export default function CheckStatusPage() {
             }
 
             // 2. Submit via Secure API
+            // Destructure to exclude nationalId from formData (it's immutable)
+            const { nationalId: _unused, ...editableFields } = formData;
+
             const response = await fetch('/api/applications/correct', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id: app.id,
-                    nationalId: app.national_id, // Critical for verification
-                    ...formData,
+                    nationalId: app.national_id, // For verification only - cannot be changed
+                    ...editableFields,
                     calculatedAge: age
                 })
             });
