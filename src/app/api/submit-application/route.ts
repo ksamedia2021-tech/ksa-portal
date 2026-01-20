@@ -109,8 +109,9 @@ export async function POST(req: NextRequest) {
 
         // 4. Email Trigger Logic
         const pdfId = courseTrack === 'CBET' ? PDF_IDS.CBET : PDF_IDS.DIPLOMA;
-        const emailSubject = `Your KSA 2026 Application Form - ${courseTrack}`;
-        const emailBody = `Dear ${data.fullName}, congratulations on qualifying. Please download the attached PDF, fill it in BLOCK LETTERS, and return it by Feb 6th, 2026.`;
+        const trackLabel = courseTrack === 'CERTIFICATE' ? 'Certificate' : courseTrack;
+        const emailSubject = `Your KSA 2026 Application Form - ${trackLabel}`;
+        const emailBody = `Dear ${data.fullName}, congratulations on qualifying for the ${trackLabel} track. Please download the attached PDF, fill it in BLOCK LETTERS, and return it by Feb 6th, 2026.`;
         const googleDriveLink = `https://drive.google.com/uc?id=${pdfId}&export=download`;
 
         // MOCK EMAIL SENDING

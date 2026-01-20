@@ -34,9 +34,9 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
         };
         const val = gradeValue[grade] || 0;
 
-        if (val >= 5) return 'DIPLOMA';
-        if (val >= 3) return 'CERTIFICATE';
-        return 'INELIGIBLE';
+        if (val >= 5) return 'DIPLOMA';    // C- or higher
+        if (val >= 3) return 'CERTIFICATE'; // D+ or D
+        return 'INELIGIBLE';               // D- or below
     };
 
     const academicLevel = getAcademicLevel(kcseGrade);
@@ -80,7 +80,7 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
             <div className="space-y-4">
                 {/* 1. Qualification - Visible for Everyone */}
                 <div>
-                    <Label htmlFor="highestQualification">Highest Qualification</Label>
+                    <Label htmlFor="highestQualification">Highest Qualification <span className="text-red-500">*</span></Label>
                     <Select id="highestQualification" {...register('highestQualification')}>
                         <option value="">-- Select Qualification --</option>
                         <option value="Degree">Degree</option>
@@ -95,7 +95,7 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
 
                 {/* 2. Grade - Visible for Everyone */}
                 <div>
-                    <Label htmlFor="kcseMeanGrade">KCSE Mean Grade</Label>
+                    <Label htmlFor="kcseMeanGrade">KCSE Mean Grade <span className="text-red-500">*</span></Label>
                     <Select id="kcseMeanGrade" {...register('kcseMeanGrade')}>
                         <option value="">-- Select Grade --</option>
                         <option value="A">A</option>
@@ -116,7 +116,7 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
 
                 {/* 3. Campus Selection */}
                 <div>
-                    <Label htmlFor="preferredCampus">Select Preferred Campus</Label>
+                    <Label htmlFor="preferredCampus">Select Preferred Campus <span className="text-red-500">*</span></Label>
                     <Select id="preferredCampus" {...register('preferredCampus')}>
                         <option value="">-- Select Campus --</option>
                         {isCBET ? (
@@ -151,7 +151,7 @@ export default function StepDetails({ age, defaultValues, onNext, onBack }: Step
                         {academicLevel === 'CERTIFICATE' && (
                             <Alert variant="info" className="bg-green-50 border-green-200">
                                 <div className="font-semibold text-green-800">Application Level: Certificate</div>
-                                <div className="text-xs text-green-600">Based on your D Plain grade, you qualify for the Certificate program.</div>
+                                <div className="text-xs text-green-600">Based on your D+ or D Plain grade, you qualify for the Certificate program.</div>
                             </Alert>
                         )}
                         {showGradeError && (

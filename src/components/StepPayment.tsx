@@ -38,7 +38,7 @@ export default function StepPayment({ onNext, onBack, isSubmitting }: StepPaymen
             </div>
 
             <div>
-                <Label htmlFor="mpesaCode">M-PESA Transaction Code</Label>
+                <Label htmlFor="mpesaCode">M-PESA Transaction Code <span className="text-red-500">*</span></Label>
                 <Input
                     id="mpesaCode"
                     placeholder="e.g. QWE1234567"

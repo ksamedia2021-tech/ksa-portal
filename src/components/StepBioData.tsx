@@ -40,31 +40,31 @@ export default function StepBioData({ defaultValues, onNext }: StepBioDataProps)
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <Label htmlFor="fullName">Full Name</Label>
+                    <Label htmlFor="fullName">Full Name <span className="text-red-500">*</span></Label>
                     <Input id="fullName" {...register('fullName')} placeholder="Enter your full name" />
                     {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName.message}</p>}
                 </div>
 
                 <div>
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
                     <Input id="email" type="email" {...register('email')} placeholder="john@example.com" />
                     {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
 
                 <div>
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                    <Label htmlFor="phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
                     <Input id="phoneNumber" {...register('phoneNumber')} placeholder="0712345678" />
                     {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber.message}</p>}
                 </div>
 
                 <div>
-                    <Label htmlFor="nationalId">National ID</Label>
+                    <Label htmlFor="nationalId">National ID <span className="text-red-500">*</span></Label>
                     <Input id="nationalId" {...register('nationalId')} placeholder="12345678" />
                     {errors.nationalId && <p className="text-red-500 text-xs mt-1">{errors.nationalId.message}</p>}
                 </div>
 
                 <div>
-                    <Label htmlFor="county">County of Residence</Label>
+                    <Label htmlFor="county">County of Residence <span className="text-red-500">*</span></Label>
                     <Select id="county" {...register('county')}>
                         <option value="">-- Select County --</option>
                         {['Mombasa', 'Kwale', 'Kilifi', 'Tana River', 'Lamu', 'Taita/Taveta', 'Garissa', 'Wajir', 'Mandera', 'Marsabit', 'Isiolo', 'Meru', 'Tharaka-Nithi', 'Embu', 'Kitui', 'Machakos', 'Makueni', 'Nyandarua', 'Nyeri', 'Kirinyaga', 'Murang\'a', 'Kiambu', 'Turkana', 'West Pokot', 'Samburu', 'Trans Nzoia', 'Uasin Gishu', 'Elgeyo/Marakwet', 'Nandi', 'Baringo', 'Laikipia', 'Nakuru', 'Narok', 'Kajiado', 'Kericho', 'Bomet', 'Kakamega', 'Vihiga', 'Bungoma', 'Busia', 'Siaya', 'Kisumu', 'Homa Bay', 'Migori', 'Kisii', 'Nyamira', 'Nairobi City'].map(c => (
@@ -75,7 +75,7 @@ export default function StepBioData({ defaultValues, onNext }: StepBioDataProps)
                 </div>
 
                 <div className="md:col-span-2">
-                    <Label htmlFor="dob">Date of Birth</Label>
+                    <Label htmlFor="dob">Date of Birth <span className="text-red-500">*</span></Label>
                     <Input id="dob" type="date" {...register('dob')} />
                     {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob.message}</p>}
                 </div>
