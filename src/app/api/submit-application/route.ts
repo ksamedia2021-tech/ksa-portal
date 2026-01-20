@@ -40,18 +40,20 @@ export async function POST(req: NextRequest) {
         if (age >= 21) {
             courseTrack = 'CBET';
         } else {
-            courseTrack = 'DIPLOMA';
-            // Server-side Grade Check for Diploma
-            if (data.kcseMeanGrade) {
-                const gradeValue = {
-                    'A': 12, 'A-': 11, 'B+': 10, 'B': 9, 'B-': 8,
-                    'C+': 7, 'C': 6, 'C-': 5, 'D+': 4, 'D': 3, 'D-': 2, 'E': 1
-                };
-                // @ts-ignore
-                const val = gradeValue[data.kcseMeanGrade] || 0;
-                if (val < 3) { // Less than D Plain
-                    return NextResponse.json({ error: 'Academic requirement not met (Minimum D Plain required)' }, { status: 400 });
-                }
+            // Determine track based on grade
+            const gradeValue: Record<string, number> = {
+                'A': 12, 'A-': 11, 'B+': 10, 'B': 9, 'B-': 8,
+                'C+': 7, 'C': 6, 'C-': 5, 'D+': 4, 'D': 3, 'D-': 2, 'E': 1
+            };
+            // @ts-ignore
+            const val = gradeValue[data.kcseMeanGrade] || 0;
+
+            if (val >= 5) {
+                courseTrack = 'DIPLOMA';
+            } else if (val >= 3) {
+                courseTrack = 'CERTIFICATE';
+            } else {
+                return NextResponse.json({ error: 'Academic requirement not met (Minimum D Plain required)' }, { status: 400 });
             }
         }
 

@@ -9,7 +9,7 @@ type Applicant = {
     id: string;
     created_at: string;
     full_name: string;
-    course_track: 'CBET' | 'DIPLOMA';
+    course_track: 'CBET' | 'DIPLOMA' | 'CERTIFICATE';
     calculated_age: number;
     kcse_mean_grade: string | null;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
