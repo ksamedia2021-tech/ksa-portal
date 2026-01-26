@@ -3,13 +3,15 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, CardContent, CardHeader } from '@/components/ui/common';
-import { ArrowLeft, Check, X, Shield, Smartphone, Monitor, Clock, MapPin } from 'lucide-react';
+import { ArrowLeft, Check, X, Shield, Smartphone, Monitor, Clock, MapPin, File, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
 
 export default function ApplicationDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const router = useRouter();
     const [app, setApp] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [signedUrl, setSignedUrl] = useState<string | null>(null);
+    const [loadingUrl, setLoadingUrl] = useState(false);
 
     useEffect(() => {
         const pin = sessionStorage.getItem('admin_pin');
@@ -33,12 +35,36 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
 
             const data = await response.json();
             setApp(data);
+
+            if (data.submitted_form_path) {
+                fetchSignedUrl(data.submitted_form_path);
+            }
         } catch (error) {
             console.error(error);
             alert('Applicant not found');
             router.push('/admin/applications');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSignedUrl = async (path: string) => {
+        setLoadingUrl(true);
+        const pin = sessionStorage.getItem('admin_pin');
+        try {
+            const response = await fetch('/api/admin/get-signed-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path, pin })
+            });
+            const data = await response.json();
+            if (data.signedUrl) {
+                setSignedUrl(data.signedUrl);
+            }
+        } catch (error) {
+            console.error('Error getting signed URL:', error);
+        } finally {
+            setLoadingUrl(false);
         }
     };
 
@@ -222,6 +248,71 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
                                 <p className="font-mono text-sm">{app.device_type || 'Unknown'}</p>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Submitted Form Preview */}
+                <Card className="md:col-span-2">
+                    <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row items-center justify-between">
+                        <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+                            <File size={18} /> Submitted Application Form
+                        </h3>
+                        {app.submitted_form_path && signedUrl && (
+                            <a
+                                href={signedUrl}
+                                target="_blank"
+                                className="text-ksa-green hover:underline flex items-center gap-1 text-sm font-bold"
+                            >
+                                Open Full Document <ExternalLink size={14} />
+                            </a>
+                        )}
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="bg-slate-100 min-h-[400px] flex items-center justify-center relative overflow-hidden">
+                            {!app.submitted_form_path ? (
+                                <div className="text-center p-12">
+                                    <File size={64} className="text-slate-300 mx-auto mb-4 opacity-50" />
+                                    <p className="text-lg font-bold text-slate-400">No form uploaded yet</p>
+                                    <p className="text-sm text-slate-400 mt-2">The student has not yet submitted their scanned application form.</p>
+                                </div>
+                            ) : loadingUrl ? (
+                                <div className="flex flex-col items-center gap-3">
+                                    <Loader2 className="w-10 h-10 animate-spin text-ksa-green" />
+                                    <p className="font-bold text-slate-500">Loading secure preview...</p>
+                                </div>
+                            ) : signedUrl ? (
+                                <div className="w-full aspect-[16/9] md:aspect-auto md:h-[800px]">
+                                    {app.submitted_form_path.toLowerCase().endsWith('.pdf') ? (
+                                        <iframe
+                                            src={`${signedUrl}#toolbar=0`}
+                                            className="w-full h-full border-none"
+                                            title="Application Form Preview"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full overflow-auto p-4 flex justify-center bg-slate-200">
+                                            <img
+                                                src={signedUrl}
+                                                alt="Application Form Scan"
+                                                className="max-w-full h-auto shadow-2xl rounded"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center p-12">
+                                    <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                                    <p className="text-lg font-bold text-slate-700">Unable to load preview</p>
+                                    <p className="text-sm text-slate-500 mt-2">Please try refreshing the page or download the file directly.</p>
+                                </div>
+                            )}
+                        </div>
+                        {app.submitted_form_path && (
+                            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-center">
+                                <p className="text-xs text-slate-500 italic">
+                                    Note: This is a secure preview. The link will expire in 10 minutes.
+                                </p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

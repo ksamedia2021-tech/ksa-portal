@@ -6,6 +6,7 @@ import { Button, Input, Card, CardHeader, CardContent, Label } from '@/component
 import { ArrowRight, Download, CheckCircle, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import StepBioData from '@/components/StepBioData';
 import StepDetails from '@/components/StepDetails';
+import { FormUpload } from '@/components/FormUpload';
 import { ApplicationData, applicationSchema } from '@/lib/schemas';
 
 export default function CheckStatusPage() {
@@ -320,6 +321,28 @@ export default function CheckStatusPage() {
                                     </div>
                                 </div>
                             </details>
+
+                            {/* Form Upload Section */}
+                            {!app.submitted_form_path && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                                        <AlertTriangle size={18} />
+                                        <p className="text-xs font-bold uppercase tracking-tight">Upload Filled Application Form</p>
+                                    </div>
+                                    <FormUpload
+                                        referenceId={app.id}
+                                        nationalId={app.national_id}
+                                        onSuccess={() => setApp({ ...app, submitted_form_path: 'uploaded' })}
+                                    />
+                                </div>
+                            )}
+
+                            {app.submitted_form_path && (
+                                <div className="bg-green-50 p-4 rounded-lg flex items-center justify-center gap-2 border border-green-100">
+                                    <CheckCircle size={18} className="text-green-600" />
+                                    <p className="text-sm font-bold text-green-700">Form Successfully Uploaded</p>
+                                </div>
+                            )}
 
                             {/* Actions */}
                             <div className="pt-2 space-y-3">

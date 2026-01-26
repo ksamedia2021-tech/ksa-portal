@@ -6,7 +6,7 @@ import { Button, Input, Card, Label, Select } from '@/components/ui/common';
 import {
     Loader2, Check, X, Download, ArrowLeft, Smartphone, Monitor,
     ChevronDown, ChevronRight, User, Mail, Phone, MapPin,
-    CreditCard, GraduationCap, Calendar, Info, ArrowRight
+    CreditCard, GraduationCap, Calendar, Info, ArrowRight, File, ExternalLink
 } from 'lucide-react';
 import React from 'react';
 
@@ -29,6 +29,7 @@ type Applicant = {
     highest_qualification: string | null;
     email_sent: boolean;
     admin_note: string | null;
+    submitted_form_path: string | null;
 };
 
 export default function ApplicationsPage() {
@@ -36,15 +37,41 @@ export default function ApplicationsPage() {
     const [applicants, setApplicants] = useState<Applicant[]>([]);
     const [loading, setLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
-    const toggleRow = (id: string, e: React.MouseEvent) => {
+    const toggleRow = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
+        const applicant = applicants.find(a => a.id === id);
+
         setExpandedRows(prev => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
-            else next.add(id);
+            else {
+                next.add(id);
+                // Fetch signed URL if it doesn't exist and path exists
+                if (applicant?.submitted_form_path && !signedUrls[id]) {
+                    getSignedUrl(id, applicant.submitted_form_path);
+                }
+            }
             return next;
         });
+    };
+
+    const getSignedUrl = async (id: string, path: string) => {
+        const pin = sessionStorage.getItem('admin_pin');
+        try {
+            const response = await fetch('/api/admin/get-signed-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path, pin })
+            });
+            const data = await response.json();
+            if (data.signedUrl) {
+                setSignedUrls(prev => ({ ...prev, [id]: data.signedUrl }));
+            }
+        } catch (error) {
+            console.error('Error getting signed URL:', error);
+        }
     };
 
     // Filter States
@@ -310,7 +337,12 @@ export default function ApplicationsPage() {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="font-bold text-slate-900">{app.full_name}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="font-bold text-slate-900">{app.full_name}</div>
+                                                    {app.submitted_form_path && (
+                                                        <File size={14} className="text-ksa-green" />
+                                                    )}
+                                                </div>
                                                 <div className="text-[10px] text-slate-400 uppercase font-medium">{new Date(app.created_at).toLocaleDateString()}</div>
                                             </td>
                                             <td className="px-6 py-4 font-mono text-xs text-slate-600">
@@ -346,97 +378,150 @@ export default function ApplicationsPage() {
                                         {/* Expanded Detail Panel */}
                                         {expandedRows.has(app.id) && (
                                             <tr className="bg-slate-50/50">
-                                                <td colSpan={7} className="px-12 py-6 border-l-4 border-l-ksa-green bg-gradient-to-r from-slate-50 to-white">
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                                        {/* Contact & Location */}
-                                                        <div className="space-y-4">
-                                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
-                                                                <User size={12} className="text-ksa-green" /> Personal & Contact
-                                                            </h4>
-                                                            <div className="space-y-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Mail size={14} /></div>
-                                                                    <div>
-                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Email Address</p>
-                                                                        <p className="text-xs font-medium">{app.email}</p>
+                                                <td colSpan={9} className="px-8 py-6 border-l-4 border-l-ksa-green bg-gradient-to-r from-slate-50 to-white">
+                                                    <div className="flex flex-col xl:flex-row gap-8">
+                                                        {/* LEFT SIDE: DETAILS */}
+                                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            {/* Contact & Location */}
+                                                            <div className="space-y-4">
+                                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                                                    <User size={12} className="text-ksa-green" /> Personal & Contact
+                                                                </h4>
+                                                                <div className="space-y-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Mail size={14} /></div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase">Email Address</p>
+                                                                            <p className="text-xs font-medium">{app.email}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-green-50 rounded-lg text-green-600"><Phone size={14} /></div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase">Phone Number</p>
+                                                                            <p className="text-xs font-medium">{app.phone_number}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-orange-50 rounded-lg text-orange-600"><MapPin size={14} /></div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase">County of Residence</p>
+                                                                            <p className="text-xs font-medium">{app.county_of_recidence || 'N/A'}</p>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="p-2 bg-green-50 rounded-lg text-green-600"><Phone size={14} /></div>
-                                                                    <div>
-                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Phone Number</p>
-                                                                        <p className="text-xs font-medium">{app.phone_number}</p>
+                                                            </div>
+
+                                                            {/* Academic Details */}
+                                                            <div className="space-y-4">
+                                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                                                    <GraduationCap size={12} className="text-ksa-green" /> Education & Qualifications
+                                                                </h4>
+                                                                <div className="space-y-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-purple-50 rounded-lg text-purple-600"><Info size={14} /></div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase">Highest Qualification</p>
+                                                                            <p className="text-xs font-medium">{app.highest_qualification || 'N/A'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Check size={14} /></div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase">KCSE Mean Grade</p>
+                                                                            <p className="text-xs font-bold text-slate-700">{app.kcse_mean_grade || 'N/A'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-pink-50 rounded-lg text-pink-600"><Calendar size={14} /></div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase">Calculated Age</p>
+                                                                            <p className="text-xs font-medium">{app.calculated_age} Years Old</p>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="p-2 bg-orange-50 rounded-lg text-orange-600"><MapPin size={14} /></div>
-                                                                    <div>
-                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">County of Residence</p>
-                                                                        <p className="text-xs font-medium">{app.county_of_recidence || 'N/A'}</p>
+                                                            </div>
+
+                                                            {/* Payment & Meta */}
+                                                            <div className="md:col-span-2 space-y-4">
+                                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                                                    <CreditCard size={12} className="text-ksa-green" /> Submission Metadata
+                                                                </h4>
+                                                                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="p-2 bg-ksa-gold/10 rounded-lg text-ksa-gold"><Smartphone size={14} /></div>
+                                                                            <div>
+                                                                                <p className="text-[10px] text-slate-400 font-bold uppercase">MPESA Code</p>
+                                                                                <p className="text-xs font-mono font-bold">{app.mpesa_code}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center justify-end">
+                                                                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${app.email_sent ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}`}>
+                                                                                {app.email_sent ? 'EMAIL SENT ✓' : 'EMAIL PENDING'}
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
+                                                                    {app.admin_note && (
+                                                                        <div className="p-3 bg-amber-50 rounded-lg text-[10px] text-amber-900 border border-amber-100 italic">
+                                                                            <span className="font-bold not-italic block mb-1">ADMIN NOTE:</span>
+                                                                            {app.admin_note}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
 
-                                                        {/* Academic Details */}
-                                                        <div className="space-y-4">
-                                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
-                                                                <GraduationCap size={12} className="text-ksa-green" /> Education & Qualifications
+                                                        {/* RIGHT SIDE: DOCUMENT PREVIEW */}
+                                                        <div className="xl:w-[450px] space-y-4">
+                                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-between mb-2">
+                                                                <span className="flex items-center gap-2"><File size={12} className="text-ksa-green" /> Submitted Form</span>
+                                                                {app.submitted_form_path && signedUrls[app.id] && (
+                                                                    <a
+                                                                        href={signedUrls[app.id]}
+                                                                        target="_blank"
+                                                                        className="text-ksa-green hover:underline flex items-center gap-1"
+                                                                    >
+                                                                        Open Full <ExternalLink size={10} />
+                                                                    </a>
+                                                                )}
                                                             </h4>
-                                                            <div className="space-y-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="p-2 bg-purple-50 rounded-lg text-purple-600"><Info size={14} /></div>
-                                                                    <div>
-                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Highest Qualification</p>
-                                                                        <p className="text-xs font-medium">{app.highest_qualification || 'N/A'}</p>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Check size={14} /></div>
-                                                                    <div>
-                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">KCSE Mean Grade</p>
-                                                                        <p className="text-xs font-bold text-slate-700">{app.kcse_mean_grade || 'N/A'}</p>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="p-2 bg-pink-50 rounded-lg text-pink-600"><Calendar size={14} /></div>
-                                                                    <div>
-                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Calculated Age</p>
-                                                                        <p className="text-xs font-medium">{app.calculated_age} Years Old</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
 
-                                                        {/* Payment & Meta */}
-                                                        <div className="space-y-4">
-                                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
-                                                                <CreditCard size={12} className="text-ksa-green" /> Submission Metadata
-                                                            </h4>
-                                                            <div className="space-y-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="p-2 bg-ksa-gold/10 rounded-lg text-ksa-gold"><Smartphone size={14} /></div>
-                                                                    <div>
-                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">MPESA Code</p>
-                                                                        <p className="text-xs font-mono font-bold">{app.mpesa_code}</p>
+                                                            <div className="bg-slate-200 rounded-xl overflow-hidden aspect-[3/4] border border-slate-200 shadow-inner flex items-center justify-center relative">
+                                                                {!app.submitted_form_path ? (
+                                                                    <div className="text-center p-8">
+                                                                        <File size={48} className="text-slate-400 mx-auto mb-4 opacity-20" />
+                                                                        <p className="text-sm font-bold text-slate-400">No form uploaded yet</p>
+                                                                        <p className="text-[10px] text-slate-400 mt-1">Student has not submitted their scan.</p>
                                                                     </div>
-                                                                </div>
-                                                                <div className="border-t border-slate-50 pt-3 flex items-center justify-between">
-                                                                    <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                                                        {app.device_type === 'Mobile' ? <Smartphone size={14} /> : <Monitor size={14} />}
-                                                                        <span className="font-medium whitespace-nowrap">{app.device_type || 'Unknown Device'} • {app.ip_address || '?.?.?.?'}</span>
+                                                                ) : !signedUrls[app.id] ? (
+                                                                    <div className="flex flex-col items-center gap-2">
+                                                                        <Loader2 className="w-8 h-8 animate-spin text-ksa-green" />
+                                                                        <p className="text-xs font-bold text-slate-500">Loading Preview...</p>
                                                                     </div>
-                                                                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${app.email_sent ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}`}>
-                                                                        {app.email_sent ? 'EMAIL SENT ✓' : 'EMAIL PENDING'}
-                                                                    </div>
-                                                                </div>
-                                                                {app.admin_note && (
-                                                                    <div className="mt-2 p-3 bg-amber-50 rounded-lg text-[10px] text-amber-900 border border-amber-100 italic">
-                                                                        <span className="font-bold not-italic block mb-1">ADMIN NOTE:</span>
-                                                                        {app.admin_note}
-                                                                    </div>
+                                                                ) : (
+                                                                    <>
+                                                                        {app.submitted_form_path.toLowerCase().endsWith('.pdf') ? (
+                                                                            <iframe
+                                                                                src={`${signedUrls[app.id]}#toolbar=0`}
+                                                                                className="w-full h-full border-none"
+                                                                                title="Application Form"
+                                                                            />
+                                                                        ) : (
+                                                                            <img
+                                                                                src={signedUrls[app.id]}
+                                                                                alt="Application Form"
+                                                                                className="w-full h-full object-contain"
+                                                                            />
+                                                                        )}
+                                                                    </>
                                                                 )}
                                                             </div>
+                                                            {app.submitted_form_path && (
+                                                                <p className="text-[10px] text-center text-slate-400 py-2">
+                                                                    Previewing secure link (valid for 10 min)
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>
