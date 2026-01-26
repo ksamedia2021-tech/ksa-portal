@@ -31,7 +31,17 @@ export async function POST(request: Request) {
             throw error;
         }
 
-        return NextResponse.json({ found: true, data });
+        // Fetch messages for this applicant
+        const { data: messages } = await supabaseAdmin
+            .from('application_messages')
+            .select('*')
+            .eq('applicant_id', data.id)
+            .order('sent_at', { ascending: false });
+
+        return NextResponse.json({
+            found: true,
+            data: { ...data, messages: messages || [] }
+        });
 
     } catch (err: any) {
         console.error('Status Check Error:', err);

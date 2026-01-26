@@ -50,7 +50,10 @@ export async function POST(req: NextRequest) {
         // 4. Update the applicants table
         const { error: updateError } = await supabaseAdmin
             .from('applicants')
-            .update({ submitted_form_path: filePath })
+            .update({
+                submitted_form_path: filePath,
+                form_submitted_at: new Date().toISOString()
+            })
             .eq('id', referenceId);
 
         if (updateError) {

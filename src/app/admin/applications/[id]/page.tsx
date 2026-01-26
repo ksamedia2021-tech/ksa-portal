@@ -3,7 +3,8 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, CardContent, CardHeader } from '@/components/ui/common';
-import { ArrowLeft, Check, X, Shield, Smartphone, Monitor, Clock, MapPin, File, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Check, X, Shield, Smartphone, Monitor, Clock, MapPin, File, ExternalLink, Loader2, AlertTriangle, MessageSquare } from 'lucide-react';
+import { ApplicantMessaging } from '@/components/ApplicantMessaging';
 
 export default function ApplicationDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -313,6 +314,22 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
                                 </p>
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+
+                {/* Correspondence Section */}
+                <Card className="md:col-span-2 shadow-lg border-ksa-green/20">
+                    <CardHeader className="bg-slate-50 border-b border-slate-100">
+                        <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                            <MessageSquare size={18} className="text-ksa-green" /> Official Correspondence
+                        </h3>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <ApplicantMessaging
+                            applicantId={app.id}
+                            applicantName={app.full_name}
+                            applicantEmail={app.email}
+                        />
                     </CardContent>
                 </Card>
             </div>

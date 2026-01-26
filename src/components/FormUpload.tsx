@@ -27,9 +27,9 @@ export const FormUpload: React.FC<FormUploadProps> = ({ referenceId, nationalId,
         if (!selectedFile) return;
 
         // Validation
-        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        const allowedTypes = ['application/pdf'];
         if (!allowedTypes.includes(selectedFile.type)) {
-            setError('Please upload a PDF or an Image (JPG/PNG).');
+            setError('Please upload a PDF file.');
             return;
         }
 
@@ -98,9 +98,9 @@ export const FormUpload: React.FC<FormUploadProps> = ({ referenceId, nationalId,
                             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
                                 <Upload size={32} />
                             </div>
-                            <h3 className="text-base font-bold text-slate-900 mb-1">Upload Your Filled Application Form</h3>
-                            <p className="text-xs text-slate-500 mb-4 max-w-xs">
-                                Please upload a scanned copy of your filled application form. (PDF, JPG or PNG. Max 5MB)
+                            <h3 className="text-base font-bold text-slate-900 mb-1">Upload Your Application</h3>
+                            <p className="text-xs text-slate-500 mb-4 max-w-sm">
+                                Please upload a scanned copy of your filled application form . (PDF, Make sure all required documents in the same pdf and in order . Max 5MB)
                             </p>
                             <input
                                 type="file"

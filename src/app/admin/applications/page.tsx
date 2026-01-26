@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Input, Card, Label, Select } from '@/components/ui/common';
+import { Button, Input, Card, Label, Select, CardHeader, CardContent } from '@/components/ui/common';
 import {
     Loader2, Check, X, Download, ArrowLeft, Smartphone, Monitor,
     ChevronDown, ChevronRight, User, Mail, Phone, MapPin,
-    CreditCard, GraduationCap, Calendar, Info, ArrowRight, File, ExternalLink
+    CreditCard, GraduationCap, Calendar, Info, ArrowRight, File, ExternalLink,
+    Square, CheckSquare, Send, MessageSquare
 } from 'lucide-react';
 import React from 'react';
 
@@ -38,6 +39,13 @@ export default function ApplicationsPage() {
     const [loading, setLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    // Bulk Messaging State
+    const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+    const [bulkSubject, setBulkSubject] = useState('');
+    const [bulkBody, setBulkBody] = useState('');
+    const [bulkSending, setBulkSending] = useState(false);
 
     const toggleRow = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -71,6 +79,56 @@ export default function ApplicationsPage() {
             }
         } catch (error) {
             console.error('Error getting signed URL:', error);
+        }
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === filteredApplicants.length && filteredApplicants.length > 0) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(filteredApplicants.map(a => a.id)));
+        }
+    };
+
+    const toggleSelectUser = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const handleBulkSend = async () => {
+        if (!bulkSubject || !bulkBody || selectedIds.size === 0) return;
+        setBulkSending(true);
+        const pin = sessionStorage.getItem('admin_pin');
+
+        try {
+            const response = await fetch('/api/admin/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    applicantIds: Array.from(selectedIds),
+                    subject: bulkSubject,
+                    body: bulkBody,
+                    pin
+                })
+            });
+
+            if (!response.ok) throw new Error('Bulk send failed');
+
+            alert(`Successfully sent messages to ${selectedIds.size} applicants!`);
+            setIsBulkModalOpen(false);
+            setBulkSubject('');
+            setBulkBody('');
+            setSelectedIds(new Set());
+        } catch (error) {
+            console.error(error);
+            alert('Failed to send bulk messages');
+        } finally {
+            setBulkSending(false);
         }
     };
 
@@ -301,6 +359,15 @@ export default function ApplicationsPage() {
                     <table className="w-full text-sm text-left">
                         <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
                             <tr>
+                                <th className="w-10 px-4 py-3 text-center">
+                                    <button onClick={toggleSelectAll} className="p-1 hover:bg-slate-200 rounded transition-colors">
+                                        {selectedIds.size > 0 && selectedIds.size === filteredApplicants.length ? (
+                                            <CheckSquare size={16} className="text-ksa-green" />
+                                        ) : (
+                                            <Square size={16} className="text-slate-300" />
+                                        )}
+                                    </button>
+                                </th>
                                 <th className="w-10 px-4 py-3 text-center"></th>
                                 <th className="px-6 py-3">Applicant</th>
                                 <th className="px-6 py-3">National ID</th>
@@ -326,9 +393,18 @@ export default function ApplicationsPage() {
                                 filteredApplicants.map((app) => (
                                     <React.Fragment key={app.id}>
                                         <tr
-                                            className={`bg-white hover:bg-slate-50 transition-colors cursor-pointer ${expandedRows.has(app.id) ? 'bg-slate-50/80' : ''}`}
+                                            className={`bg-white hover:bg-slate-50 transition-colors cursor-pointer ${expandedRows.has(app.id) ? 'bg-slate-50/80' : ''} ${selectedIds.has(app.id) ? 'bg-ksa-green/5' : ''}`}
                                             onClick={() => router.push(`/admin/applications/${app.id}`)}
                                         >
+                                            <td className="px-4 py-4 text-center" onClick={(e) => toggleSelectUser(app.id, e)}>
+                                                <div className="p-1">
+                                                    {selectedIds.has(app.id) ? (
+                                                        <CheckSquare size={18} className="text-ksa-green inline" />
+                                                    ) : (
+                                                        <Square size={18} className="text-slate-300 inline" />
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-4 text-center" onClick={(e) => toggleRow(app.id, e)}>
                                                 {expandedRows.has(app.id) ? (
                                                     <ChevronDown size={18} className="text-ksa-green inline" />
@@ -378,7 +454,7 @@ export default function ApplicationsPage() {
                                         {/* Expanded Detail Panel */}
                                         {expandedRows.has(app.id) && (
                                             <tr className="bg-slate-50/50">
-                                                <td colSpan={9} className="px-8 py-6 border-l-4 border-l-ksa-green bg-gradient-to-r from-slate-50 to-white">
+                                                <td colSpan={10} className="px-8 py-6 border-l-4 border-l-ksa-green bg-gradient-to-r from-slate-50 to-white">
                                                     <div className="flex flex-col xl:flex-row gap-8">
                                                         {/* LEFT SIDE: DETAILS */}
                                                         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -534,6 +610,85 @@ export default function ApplicationsPage() {
                     </table>
                 </div>
             </Card>
+
+            {/* Bulk Action Bar */}
+            {selectedIds.size > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-slate-700">
+                        <div className="flex items-center gap-2 pr-6 border-r border-slate-700">
+                            <span className="flex items-center justify-center w-6 h-6 bg-ksa-green rounded-full text-[10px] font-bold">{selectedIds.size}</span>
+                            <span className="text-sm font-medium">Applicants Selected</span>
+                        </div>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={() => setIsBulkModalOpen(true)}
+                                className="bg-ksa-green hover:bg-green-600 text-white h-9 py-0 text-xs"
+                            >
+                                <Send size={14} className="mr-2" /> Message Group
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setSelectedIds(new Set())}
+                                className="border-slate-700 text-slate-300 hover:bg-slate-800 h-9 py-0 text-xs"
+                            >
+                                Clear Selection
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Message Modal */}
+            {isBulkModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <Card className="w-full max-w-lg shadow-2xl border-none">
+                        <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row justify-between items-center">
+                            <div>
+                                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                    <MessageSquare size={18} className="text-ksa-green" /> Group Messaging
+                                </h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Ready to send to {selectedIds.size} recipients</p>
+                            </div>
+                            <button onClick={() => setIsBulkModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <X size={20} />
+                            </button>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-4">
+                            <div className="space-y-4">
+                                <div>
+                                    <Label className="text-[10px] uppercase font-bold text-slate-400">Email Subject</Label>
+                                    <Input
+                                        placeholder="Enter subject for the group email..."
+                                        value={bulkSubject}
+                                        onChange={(e) => setBulkSubject(e.target.value)}
+                                        className="h-10 mt-1"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-[10px] uppercase font-bold text-slate-400">Message Body</Label>
+                                    <textarea
+                                        className="w-full mt-1 p-3 text-sm border-slate-200 rounded-lg focus:ring-ksa-green min-h-[150px] bg-slate-50/50"
+                                        placeholder="Type your message here. Each recipient will get a personalized copy..."
+                                        value={bulkBody}
+                                        onChange={(e) => setBulkBody(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="pt-2 flex gap-3">
+                                <Button variant="outline" className="flex-1" onClick={() => setIsBulkModalOpen(false)}>Cancel</Button>
+                                <Button
+                                    className="flex-1 px-8"
+                                    onClick={handleBulkSend}
+                                    isLoading={bulkSending}
+                                    disabled={!bulkSubject || !bulkBody || bulkSending}
+                                >
+                                    <Send size={16} className="mr-2" /> Send to Group
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }

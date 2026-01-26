@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button, Input, Card, CardHeader, CardContent, Label } from '@/components/ui/common';
-import { ArrowRight, Download, CheckCircle, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { ArrowRight, Download, CheckCircle, XCircle, AlertTriangle, Loader2, History, MessageSquare } from 'lucide-react';
 import StepBioData from '@/components/StepBioData';
 import StepDetails from '@/components/StepDetails';
 import { FormUpload } from '@/components/FormUpload';
@@ -322,12 +322,37 @@ export default function CheckStatusPage() {
                                 </div>
                             </details>
 
+                            {/* Messages from Admissions */}
+                            {app.messages && app.messages.length > 0 && (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 text-slate-500 py-1">
+                                        <MessageSquare size={16} />
+                                        <h3 className="text-xs font-bold uppercase tracking-wider">Messages from Admissions</h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {app.messages.map((msg: any) => (
+                                            <div key={msg.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-2">
+                                                <div className="flex justify-between items-start">
+                                                    <h4 className="text-sm font-bold text-slate-800 leading-tight">{msg.subject}</h4>
+                                                    <span className="text-[10px] text-slate-400 font-mono">{new Date(msg.sent_at).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-sm text-slate-600 border-l-2 border-ksa-green/30 pl-3 py-1 bg-slate-50/50 rounded-r">
+                                                    {msg.body}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Form Upload Section */}
                             {!app.submitted_form_path && (
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
                                         <AlertTriangle size={18} />
-                                        <p className="text-xs font-bold uppercase tracking-tight">Upload Filled Application Form</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-tight leading-tight">
+                                            Please upload a scanned copy of your filled application form . (PDF, Make sure all required documents in the same pdf and in order . Max 5MB)
+                                        </p>
                                     </div>
                                     <FormUpload
                                         referenceId={app.id}
