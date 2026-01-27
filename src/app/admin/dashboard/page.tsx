@@ -82,6 +82,9 @@ export default function AdminDashboard() {
                     <p className="text-slate-500">Real-time insights for 2026 Intake</p>
                 </div>
                 <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => router.push('/admin/funnel')} className="gap-2 bg-slate-900 text-white hover:bg-slate-800 border-none">
+                        Filing Funnel <Activity size={16} />
+                    </Button>
                     <Button variant="outline" onClick={() => router.push('/admin/applications')} className="gap-2">
                         View Applicants <ArrowRight size={16} />
                     </Button>

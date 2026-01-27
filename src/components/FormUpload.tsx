@@ -100,7 +100,11 @@ export const FormUpload: React.FC<FormUploadProps> = ({ referenceId, nationalId,
                             </div>
                             <h3 className="text-base font-bold text-slate-900 mb-1">Upload Your Application</h3>
                             <p className="text-xs text-slate-500 mb-4 max-w-sm">
-                                Please upload a scanned copy of your filled application form . (PDF, Make sure all required documents in the same pdf and in order . Max 5MB)
+                                Please upload a <strong>single PDF file</strong> containing all documents in this order:
+                                <br />
+                                <span className="text-[10px] mt-2 block text-slate-400">
+                                    1. Course Application Form + 2. KCSE Certificate + 3. Leaving Certificate + 4. National ID Card + 5. Birth Certificate + 6. Other relevant certificates
+                                </span>
                             </p>
                             <input
                                 type="file"

@@ -350,8 +350,12 @@ export default function CheckStatusPage() {
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
                                         <AlertTriangle size={18} />
-                                        <p className="text-[10px] font-bold uppercase tracking-tight leading-tight">
-                                            Please upload a scanned copy of your filled application form . (PDF, Make sure all required documents in the same pdf and in order . Max 5MB)
+                                        <p className="text-[10px] font-bold uppercase tracking-tight leading-loose">
+                                            Please upload a <strong>single PDF file</strong> containing these documents in order:
+                                            <br />
+                                            1. Course Application Form + 2. KCSE Certificate + 3. Leaving Certificate + 4. National ID Card + 5. Birth Certificate + 6. Other relevant certificates.
+                                            <br />
+                                            (Max size: 5MB)
                                         </p>
                                     </div>
                                     <FormUpload

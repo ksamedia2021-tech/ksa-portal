@@ -111,7 +111,13 @@ export async function POST(req: NextRequest) {
         const pdfId = courseTrack === 'CBET' ? PDF_IDS.CBET : PDF_IDS.DIPLOMA;
         const trackLabel = courseTrack === 'CERTIFICATE' ? 'Certificate' : courseTrack;
         const emailSubject = `Your KSA 2026 Application Form - ${trackLabel}`;
-        const emailBody = `Dear ${data.fullName}, congratulations on qualifying for the ${trackLabel} track. Please download the attached PDF, fill it in BLOCK LETTERS, and return it by Feb 6th, 2026.`;
+        const emailBody = `Dear ${data.fullName}, congratulations on qualifying for the ${trackLabel} track. 
+
+Please follow these steps to complete your enrollment:
+1. Download the attached PDF and fill it in BLOCK LETTERS.
+2. Scan the filled form along with: KCSE Certificate, Leaving Certificate, National ID, and Birth Certificate.
+3. Combine all documents into ONE SINGLE PDF in that specific order.
+4. Upload the single PDF via the status portal by Feb 6th, 2026.`;
         const googleDriveLink = `https://drive.google.com/uc?id=${pdfId}&export=download`;
 
         // MOCK EMAIL SENDING
