@@ -21,7 +21,9 @@ export async function POST(request: Request) {
             .select('*')
             .eq('national_id', nationalId)
             .eq('phone_number', phone)
-            .single();
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
         if (error) {
             // PGRST116 means no rows found, which is not an error for us

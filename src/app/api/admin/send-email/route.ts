@@ -32,9 +32,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Failed to fetch recipients' }, { status: 500 });
         }
 
-        // 3. Prepare Batch Emails for Resend
         const emails = applicants.map(app => ({
-            from: 'KSA Admissions <onboarding@resend.dev>', // Using Resend default until domain is verified
+            from: process.env.EMAIL_FROM || 'KSA Admissions <no-reply@admissions.ksa.ac.ke>',
             to: app.email,
             subject: subject,
             html: `

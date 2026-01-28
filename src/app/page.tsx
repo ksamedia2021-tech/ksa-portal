@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader } from '@/components/ui/common';
 import MotionWrapper from '@/components/ui/MotionWrapper';
 import StepBioData from '@/components/StepBioData';
@@ -10,6 +11,7 @@ import StepSuccess from '@/components/StepSuccess';
 import { PersonalDetailsData, AcademicDetailsData, PaymentData, ApplicationData } from '@/lib/schemas';
 
 export default function Home() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<ApplicationData>>({});
   const [calculatedAge, setCalculatedAge] = useState<number>(0);
@@ -40,6 +42,14 @@ export default function Home() {
 
       if (!response.ok) {
         const errorData = await response.json();
+
+        // Handle Duplicate Redirection
+        if (errorData.code === 'DUPLICATE_ID') {
+          alert("You have already submitted an application. Redirecting you to check your status...");
+          router.push('/check-status');
+          return;
+        }
+
         throw new Error(errorData.error || 'Submission failed');
       }
 

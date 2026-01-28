@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { applicationSchema } from '@/lib/schemas';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
 
-// Initialize Supabase Admin Client (Bypasses RLS)
+// Initialize Clients
+const resend = new Resend(process.env.RESEND_API_KEY);
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -66,7 +68,8 @@ export async function POST(req: NextRequest) {
 
         if (existingApp) {
             return NextResponse.json({
-                error: 'Application already exists for this National ID'
+                error: 'Application already exists for this National ID',
+                code: 'DUPLICATE_ID'
             }, { status: 400 });
         }
 
@@ -107,30 +110,46 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Database error', details: dbError.message }, { status: 500 });
         }
 
-        // 4. Email Trigger Logic
-        const pdfId = courseTrack === 'CBET' ? PDF_IDS.CBET : PDF_IDS.DIPLOMA;
-        const trackLabel = courseTrack === 'CERTIFICATE' ? 'Certificate' : courseTrack;
-        const emailSubject = `Your KSA 2026 Application Form - ${trackLabel}`;
-        const emailBody = `Dear ${data.fullName}, congratulations on qualifying for the ${trackLabel} track. 
-
-Please follow these steps to complete your enrollment:
-1. Download the attached PDF and fill it in BLOCK LETTERS.
-2. Scan the filled form along with: KCSE Certificate, Leaving Certificate, National ID, and Birth Certificate.
-3. Combine all documents into ONE SINGLE PDF in that specific order.
-4. Upload the single PDF via the status portal by Feb 6th, 2026.`;
+        // 4. Send Live Email via Resend
         const googleDriveLink = `https://drive.google.com/uc?id=${pdfId}&export=download`;
 
-        // MOCK EMAIL SENDING
-        console.log("---------------------------------------------------");
-        console.log("📧 MOCK EMAIL TRIGGERED");
-        console.log(`To: ${data.email}`);
-        console.log(`Subject: ${emailSubject}`);
-        console.log(`Body: ${emailBody}`);
-        console.log(`Attachment Link: ${googleDriveLink}`);
-        console.log("---------------------------------------------------");
+        const { error: emailError } = await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'KSA Admissions <no-reply@admissions.ksa.ac.ke>',
+            to: [data.email],
+            subject: emailSubject,
+            html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                    <div style="background-color: #008000; color: white; padding: 15px; border-radius: 8px 8px 0 0; text-align: center;">
+                        <h1 style="margin: 0;">KSA Enrollment</h1>
+                    </div>
+                    <div style="padding: 20px;">
+                        <p>Dear ${data.fullName},</p>
+                        <p>Congratulations! You have qualified for the <strong>${trackLabel}</strong> track at Kenya School of Agriculture.</p>
+                        
+                        <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #008000; margin: 20px 0;">
+                            <h3 style="margin-top: 0;">Next Steps:</h3>
+                            <ol style="line-height: 1.6;">
+                                <li><strong>Download:</strong> <a href="${googleDriveLink}" style="color: #008000; font-weight: bold;">Click here to download your application form PDF</a>.</li>
+                                <li><strong>Fill & Scan:</strong> Print and fill the form in BLOCK LETTERS. Scan it along with your KCSE Certificate, Leaving Certificate, National ID, and Birth Certificate.</li>
+                                <li><strong>Combine:</strong> Merge all documents into <strong>ONE SINGLE PDF</strong> in that specific order.</li>
+                                <li><strong>Upload:</strong> Visit our <a href="https://ksa-portal.vercel.app/check-status" style="color: #008000;">Status Portal</a> to upload the final PDF by Feb 6th, 2026.</li>
+                            </ol>
+                        </div>
 
-        // In a real scenario, we would update email_sent to true here
-        await supabaseAdmin.from('applicants').update({ email_sent: true }).eq('id', inserted.id);
+                        <p>If you have any questions, please reply to this email or visit our admissions office.</p>
+                        <p>Best Regards,<br/>KSA Admissions Team</p>
+                    </div>
+                </div>
+            `
+        });
+
+        if (emailError) {
+            console.error('Resend Error:', emailError);
+            // We don't fail the whole request if email fails, but we log it
+        } else {
+            // Update email_sent status
+            await supabaseAdmin.from('applicants').update({ email_sent: true }).eq('id', inserted.id);
+        }
 
         return NextResponse.json({ success: true, trackingId: inserted.id });
 
