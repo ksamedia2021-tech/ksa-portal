@@ -111,6 +111,9 @@ export async function POST(req: NextRequest) {
         }
 
         // 4. Send Live Email via Resend
+        const pdfId = courseTrack === 'CBET' ? PDF_IDS.CBET : PDF_IDS.DIPLOMA;
+        const trackLabel = courseTrack === 'CERTIFICATE' ? 'Certificate' : courseTrack;
+        const emailSubject = `Your KSA 2026 Application Form - ${trackLabel}`;
         const googleDriveLink = `https://drive.google.com/uc?id=${pdfId}&export=download`;
 
         const { error: emailError } = await resend.emails.send({
