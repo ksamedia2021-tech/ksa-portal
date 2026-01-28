@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, CardContent, CardHeader, Alert } from '@/components/ui/common';
-import { Users, FileText, LogOut, ArrowRight, Activity, AlertTriangle, TrendingUp, PieChart as PieIcon, Map } from 'lucide-react';
+import { Users, FileText, LogOut, ArrowRight, Activity, AlertTriangle, TrendingUp, PieChart as PieIcon, Map, CheckCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar,
@@ -28,22 +29,23 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const checkAuth = () => {
-            const pin = sessionStorage.getItem('admin_pin');
-            if (pin !== '2026') {
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
                 router.push('/admin');
             } else {
-                fetchData();
+                fetchData(session.access_token);
             }
         };
         checkAuth();
     }, [router]);
 
-    const fetchData = async () => {
-        const pin = sessionStorage.getItem('admin_pin');
+    const fetchData = async (token: string) => {
         try {
             const response = await fetch('/api/admin/stats', {
-                headers: { 'x-admin-pin': pin || '' }
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
             if (!response.ok) throw new Error('Failed to fetch stats');
@@ -52,15 +54,17 @@ export default function AdminDashboard() {
             setStats(data);
         } catch (error) {
             console.error(error);
-            // Optional: Redirect to login or show error
         } finally {
             setLoading(false);
         }
     };
 
-    const handleLogout = () => {
-        sessionStorage.removeItem('admin_pin');
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        // Clear the helper cookie
+        document.cookie = "admin_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         router.push('/admin');
+        router.refresh();
     };
 
     if (loading || !stats) return <div className="p-8 text-center flex items-center justify-center h-[50vh]"><Activity className="animate-spin mr-2" /> Loading Analytics...</div>;
@@ -120,7 +124,6 @@ export default function AdminDashboard() {
                     value={stats.totalApplications}
                     icon={<Users className="text-slate-600" size={24} />}
                     className="bg-white border-slate-200"
-                    valueColor="text-slate-900"
                     trend="+12% this week"
                 />
                 <SummaryCard
@@ -128,7 +131,6 @@ export default function AdminDashboard() {
                     value={stats.pendingApplications}
                     icon={<FileText className="text-yellow-600" size={24} />}
                     className="bg-white border-yellow-200"
-                    valueColor="text-yellow-600"
                     subtext="Pending Review"
                 />
                 <SummaryCard
@@ -136,7 +138,6 @@ export default function AdminDashboard() {
                     value={stats.totalApplications - stats.pendingApplications}
                     icon={<CheckCircleIcon className="text-green-600" />}
                     className="bg-white border-green-200"
-                    valueColor="text-green-600"
                 />
             </div>
 
@@ -254,14 +255,14 @@ export default function AdminDashboard() {
     );
 }
 
-function SummaryCard({ title, value, icon, className, trend, valueColor, subtext }: any) {
+function SummaryCard({ title, value, icon, className, trend, subtext }: any) {
     return (
         <Card className={className}>
             <CardContent className="p-6">
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="opacity-70 text-sm font-medium uppercase tracking-wider">{title}</p>
-                        <h3 className={`text-4xl font-bold mt-2 ${valueColor || ''}`}>{value}</h3>
+                        <h3 className="text-4xl font-bold mt-2">{value}</h3>
                         {subtext && <p className="text-sm opacity-60 mt-1">{subtext}</p>}
                         {trend && <p className="text-xs text-green-400 mt-2 font-medium">{trend}</p>}
                     </div>

@@ -23,8 +23,16 @@ export default function FraudReportPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchFraudData();
-    }, []);
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                router.push('/admin');
+            } else {
+                fetchFraudData();
+            }
+        };
+        checkAuth();
+    }, [router]);
 
     const fetchFraudData = async () => {
         const { data, error } = await supabase

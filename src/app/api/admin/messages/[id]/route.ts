@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdmin } from '@/lib/admin-auth-server';
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,12 +8,11 @@ const supabaseAdmin = createClient(
 );
 
 export async function GET(req: NextRequest, props: { params: Promise<{ id: string }> }) {
-    const params = await props.params;
     try {
-        const pin = req.headers.get('x-admin-pin');
-        if (pin !== '2026') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const user = await verifyAdmin(req);
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+        const params = await props.params;
 
         const { data, error } = await supabaseAdmin
             .from('application_messages')

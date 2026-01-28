@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdmin } from '@/lib/admin-auth-server';
 
 // Initialize Supabase Admin Client
 const supabaseAdmin = createClient(
@@ -9,12 +10,10 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
     try {
-        const { path, pin } = await req.json();
+        const user = await verifyAdmin(req);
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        // 1. Verify Admin PIN
-        if (pin !== '2026') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const { path } = await req.json();
 
         if (!path) {
             return NextResponse.json({ error: 'Missing file path' }, { status: 400 });

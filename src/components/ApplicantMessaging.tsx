@@ -24,6 +24,8 @@ const TEMPLATES = [
     { name: 'Verified', subject: 'Application Verified: Next Steps', body: 'We have successfully verified your application and documents. Please wait for further instructions regarding your admission letter.' },
 ];
 
+import { supabase } from '@/lib/supabase';
+
 export const ApplicantMessaging: React.FC<ApplicantMessagingProps> = ({ applicantId, applicantName, applicantEmail }) => {
     const [subject, setSubject] = useState('');
     const [body, setBody] = useState('');
@@ -39,9 +41,11 @@ export const ApplicantMessaging: React.FC<ApplicantMessagingProps> = ({ applican
     const fetchHistory = async () => {
         setLoadingHistory(true);
         try {
-            const pin = sessionStorage.getItem('admin_pin');
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+
             const response = await fetch(`/api/admin/messages/${applicantId}`, {
-                headers: { 'x-admin-pin': pin || '' }
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
             });
             if (response.ok) {
                 const data = await response.json();
@@ -59,17 +63,20 @@ export const ApplicantMessaging: React.FC<ApplicantMessagingProps> = ({ applican
         setSending(true);
         setStatus(null);
 
-        const pin = sessionStorage.getItem('admin_pin');
-
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('Not authenticated');
+
             const response = await fetch('/api/admin/send-email', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify({
                     applicantIds: [applicantId],
                     subject,
-                    body,
-                    pin
+                    body
                 })
             });
 

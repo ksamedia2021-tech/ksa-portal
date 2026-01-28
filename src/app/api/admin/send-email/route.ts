@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { verifyAdmin } from '@/lib/admin-auth-server';
 
 // Initialize Clients
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -11,12 +12,10 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
     try {
-        const { applicantIds, subject, body, pin } = await req.json();
+        const user = await verifyAdmin(req);
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        // 1. Verify Admin PIN
-        if (pin !== '2026') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const { applicantIds, subject, body } = await req.json();
 
         if (!applicantIds || !Array.isArray(applicantIds) || applicantIds.length === 0) {
             return NextResponse.json({ error: 'Recipient list is empty' }, { status: 400 });
@@ -82,6 +81,20 @@ export async function POST(req: NextRequest) {
             console.error('Log Error:', logError);
             // We don't fail the request here because emails were already sent
         }
+
+        // 6. Log Audit Trail
+        await supabaseAdmin
+            .from('audit_logs')
+            .insert({
+                admin_id: user.id,
+                admin_email: user.email,
+                action: 'SEND_BULK_EMAIL',
+                details: {
+                    subject,
+                    recipient_count: applicants.length,
+                    applicant_ids: applicantIds
+                }
+            });
 
         return NextResponse.json({
             success: true,

@@ -33,6 +33,8 @@ type Applicant = {
     submitted_form_path: string | null;
 };
 
+import { supabase } from '@/lib/supabase';
+
 export default function ApplicationsPage() {
     const router = useRouter();
     const [applicants, setApplicants] = useState<Applicant[]>([]);
@@ -40,12 +42,26 @@ export default function ApplicationsPage() {
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [session, setSession] = useState<any>(null);
 
     // Bulk Messaging State
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [bulkSubject, setBulkSubject] = useState('');
     const [bulkBody, setBulkBody] = useState('');
     const [bulkSending, setBulkSending] = useState(false);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (!currentSession) {
+                router.push('/admin');
+            } else {
+                setSession(currentSession);
+                fetchApplicants(currentSession.access_token);
+            }
+        };
+        checkAuth();
+    }, [router]);
 
     const toggleRow = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -57,21 +73,23 @@ export default function ApplicationsPage() {
             else {
                 next.add(id);
                 // Fetch signed URL if it doesn't exist and path exists
-                if (applicant?.submitted_form_path && !signedUrls[id]) {
-                    getSignedUrl(id, applicant.submitted_form_path);
+                if (applicant?.submitted_form_path && !signedUrls[id] && session) {
+                    getSignedUrl(id, applicant.submitted_form_path, session.access_token);
                 }
             }
             return next;
         });
     };
 
-    const getSignedUrl = async (id: string, path: string) => {
-        const pin = sessionStorage.getItem('admin_pin');
+    const getSignedUrl = async (id: string, path: string, token: string) => {
         try {
             const response = await fetch('/api/admin/get-signed-url', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path, pin })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ path })
             });
             const data = await response.json();
             if (data.signedUrl) {
@@ -101,19 +119,20 @@ export default function ApplicationsPage() {
     };
 
     const handleBulkSend = async () => {
-        if (!bulkSubject || !bulkBody || selectedIds.size === 0) return;
+        if (!bulkSubject || !bulkBody || selectedIds.size === 0 || !session) return;
         setBulkSending(true);
-        const pin = sessionStorage.getItem('admin_pin');
 
         try {
             const response = await fetch('/api/admin/send-email', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify({
                     applicantIds: Array.from(selectedIds),
                     subject: bulkSubject,
-                    body: bulkBody,
-                    pin
+                    body: bulkBody
                 })
             });
 
@@ -139,23 +158,15 @@ export default function ApplicationsPage() {
     const [campusFilter, setCampusFilter] = useState('ALL');
     const [dateRange, setDateRange] = useState('ALL');
 
-    useEffect(() => {
-        const pin = sessionStorage.getItem('admin_pin');
-        if (pin !== '2026') {
-            router.push('/admin');
-        } else {
-            fetchApplicants();
-        }
-    }, [router]);
+    const fetchApplicants = async (token?: string) => {
+        const activeToken = token || session?.access_token;
+        if (!activeToken) return;
 
-    const fetchApplicants = async () => {
         setLoading(true);
-        const pin = sessionStorage.getItem('admin_pin');
-
         try {
             const response = await fetch('/api/admin/applications', {
                 headers: {
-                    'x-admin-pin': pin || ''
+                    'Authorization': `Bearer ${activeToken}`
                 }
             });
 
@@ -172,15 +183,17 @@ export default function ApplicationsPage() {
     };
 
     const updateStatus = async (id: string, newStatus: 'APPROVED' | 'REJECTED') => {
-        const pin = sessionStorage.getItem('admin_pin');
+        if (!session) return;
         try {
             const response = await fetch('/api/admin/update-status', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify({
                     id,
-                    status: newStatus,
-                    pin
+                    status: newStatus
                 })
             });
 

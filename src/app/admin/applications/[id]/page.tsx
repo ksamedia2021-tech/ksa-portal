@@ -6,6 +6,8 @@ import { Button, Card, CardContent, CardHeader } from '@/components/ui/common';
 import { ArrowLeft, Check, X, Shield, Smartphone, Monitor, Clock, MapPin, File, ExternalLink, Loader2, AlertTriangle, MessageSquare } from 'lucide-react';
 import { ApplicantMessaging } from '@/components/ApplicantMessaging';
 
+import { supabase } from '@/lib/supabase';
+
 export default function ApplicationDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const router = useRouter();
@@ -13,21 +15,28 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
     const [loading, setLoading] = useState(true);
     const [signedUrl, setSignedUrl] = useState<string | null>(null);
     const [loadingUrl, setLoadingUrl] = useState(false);
+    const [session, setSession] = useState<any>(null);
 
     useEffect(() => {
-        const pin = sessionStorage.getItem('admin_pin');
-        if (pin !== '2026') {
-            router.push('/admin');
-        } else {
-            fetchApp();
-        }
+        const checkAuth = async () => {
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (!currentSession) {
+                router.push('/admin');
+            } else {
+                setSession(currentSession);
+                fetchApp(currentSession.access_token);
+            }
+        };
+        checkAuth();
     }, [id]);
 
-    const fetchApp = async () => {
-        const pin = sessionStorage.getItem('admin_pin');
+    const fetchApp = async (token?: string) => {
+        const activeToken = token || session?.access_token;
+        if (!activeToken) return;
+
         try {
             const response = await fetch(`/api/admin/applications/${id}`, {
-                headers: { 'x-admin-pin': pin || '' }
+                headers: { 'Authorization': `Bearer ${activeToken}` }
             });
 
             if (!response.ok) {
@@ -38,7 +47,7 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
             setApp(data);
 
             if (data.submitted_form_path) {
-                fetchSignedUrl(data.submitted_form_path);
+                fetchSignedUrl(data.submitted_form_path, activeToken);
             }
         } catch (error) {
             console.error(error);
@@ -49,14 +58,16 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
         }
     };
 
-    const fetchSignedUrl = async (path: string) => {
+    const fetchSignedUrl = async (path: string, token: string) => {
         setLoadingUrl(true);
-        const pin = sessionStorage.getItem('admin_pin');
         try {
             const response = await fetch('/api/admin/get-signed-url', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path, pin })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ path })
             });
             const data = await response.json();
             if (data.signedUrl) {
@@ -73,17 +84,19 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
     const [isCorrectionMode, setIsCorrectionMode] = useState(false);
 
     const updateStatus = async (newStatus: 'APPROVED' | 'REJECTED' | 'NEEDS_CORRECTION', note?: string) => {
-        const pin = sessionStorage.getItem('admin_pin');
+        if (!session) return;
 
         try {
             const response = await fetch('/api/admin/update-status', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify({
                     id: id,
                     status: newStatus,
-                    admin_note: note,
-                    pin: pin // Send PIN for validation
+                    admin_note: note
                 })
             });
 

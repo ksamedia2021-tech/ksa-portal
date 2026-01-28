@@ -24,11 +24,14 @@ interface DashData {
     priorityQueue: any[];
 }
 
+import { supabase } from '@/lib/supabase';
+
 export default function FunnelDashboard() {
     const router = useRouter();
     const [data, setData] = useState<DashData | null>(null);
     const [loading, setLoading] = useState(true);
     const [nudging, setNudging] = useState(false);
+    const [session, setSession] = useState<any>(null);
 
     // Nudge Modal State
     const [isNudgeModalOpen, setIsNudgeModalOpen] = useState(false);
@@ -36,20 +39,26 @@ export default function FunnelDashboard() {
     const [nudgeBody] = useState('We noticed you have completed your online registration, but your filled application form is still missing. Please log in to the portal and upload your scanned form to complete your application.');
 
     useEffect(() => {
-        const pin = sessionStorage.getItem('admin_pin');
-        if (pin !== '2026') {
-            router.push('/admin');
-        } else {
-            fetchStats();
-        }
+        const checkAuth = async () => {
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (!currentSession) {
+                router.push('/admin');
+            } else {
+                setSession(currentSession);
+                fetchStats(currentSession.access_token);
+            }
+        };
+        checkAuth();
     }, [router]);
 
-    const fetchStats = async () => {
+    const fetchStats = async (token?: string) => {
+        const activeToken = token || session?.access_token;
+        if (!activeToken) return;
+
         setLoading(true);
-        const pin = sessionStorage.getItem('admin_pin');
         try {
             const response = await fetch('/api/admin/dash-stats', {
-                headers: { 'x-admin-pin': pin || '' }
+                headers: { 'Authorization': `Bearer ${activeToken}` }
             });
             if (!response.ok) throw new Error('Failed to fetch');
             const result = await response.json();
@@ -62,10 +71,9 @@ export default function FunnelDashboard() {
     };
 
     const handleBulkSendNudge = async () => {
-        if (!data || data.stats.missingForm === 0) return;
+        if (!data || data.stats.missingForm === 0 || !session) return;
 
         setNudging(true);
-        const pin = sessionStorage.getItem('admin_pin');
         const missingIds = data.priorityQueue
             .filter(a => a.stage === 'Bio-data Only')
             .map(a => a.id);
@@ -73,12 +81,14 @@ export default function FunnelDashboard() {
         try {
             const response = await fetch('/api/admin/send-email', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify({
                     applicantIds: missingIds,
                     subject: nudgeSubject,
-                    body: nudgeBody,
-                    pin
+                    body: nudgeBody
                 })
             });
 

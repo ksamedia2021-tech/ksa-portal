@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { verifyAdmin } from '@/lib/admin-auth-server';
 
 // Service Role Client
 const supabaseAdmin = createClient(
@@ -9,11 +10,8 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: Request) {
     try {
-        // Verify PIN from Headers
-        const pin = request.headers.get('x-admin-pin');
-        if (pin !== '2026') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const user = await verifyAdmin(request as any);
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         const { data, error } = await supabaseAdmin
             .from('applicants')

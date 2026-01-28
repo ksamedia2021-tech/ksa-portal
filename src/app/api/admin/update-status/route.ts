@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { verifyAdmin } from '@/lib/admin-auth-server';
 
 // Create a Supabase client with the SERVICE ROLE key
-// This client bypasses Row Level Security (RLS)
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -10,13 +10,11 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { id, status, admin_note, pin } = body;
+        const user = await verifyAdmin(request as any);
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        // 1. Server-Side Security Check
-        if (pin !== '2026') {
-            return NextResponse.json({ error: 'Unauthorized: Invalid Admin PIN' }, { status: 401 });
-        }
+        const body = await request.json();
+        const { id, status, admin_note } = body;
 
         if (!id || !status) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -43,7 +41,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        // 4. Success Response
+        // 4. Log Action
+        await supabaseAdmin
+            .from('audit_logs')
+            .insert({
+                admin_id: user.id,
+                admin_email: user.email,
+                action: 'UPDATE_STATUS',
+                target_id: id,
+                details: { status, previous_status: data?.status || 'UNKNOWN', admin_note }
+            });
+
+        // 5. Success Response
         return NextResponse.json({ success: true, data });
 
     } catch (err: any) {
