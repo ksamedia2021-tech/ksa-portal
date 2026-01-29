@@ -7,7 +7,7 @@ import {
     Loader2, Check, X, Download, ArrowLeft, Smartphone, Monitor,
     ChevronDown, ChevronRight, User, Mail, Phone, MapPin,
     CreditCard, GraduationCap, Calendar, Info, ArrowRight, File, ExternalLink,
-    Square, CheckSquare, Send, MessageSquare
+    Square, CheckSquare, Send, MessageSquare, Shield, CheckCircle
 } from 'lucide-react';
 import React from 'react';
 
@@ -49,6 +49,11 @@ export default function ApplicationsPage() {
     const [bulkSubject, setBulkSubject] = useState('');
     const [bulkBody, setBulkBody] = useState('');
     const [bulkSending, setBulkSending] = useState(false);
+
+    // Bulk Status States
+    const [bulkUpdating, setBulkUpdating] = useState(false);
+    const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
+    const [correctionNote, setCorrectionNote] = useState('');
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -148,6 +153,41 @@ export default function ApplicationsPage() {
             alert('Failed to send bulk messages');
         } finally {
             setBulkSending(false);
+        }
+    };
+
+    const handleBulkStatusUpdate = async (status: string, note?: string) => {
+        if (selectedIds.size === 0 || !session) return;
+        setBulkUpdating(true);
+
+        try {
+            const response = await fetch('/api/admin/bulk-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    applicantIds: Array.from(selectedIds),
+                    status,
+                    adminNote: note
+                })
+            });
+
+            if (response.ok) {
+                alert(`Successfully updated ${selectedIds.size} applicants!`);
+                setSelectedIds(new Set());
+                setIsCorrectionModalOpen(false);
+                setCorrectionNote('');
+                fetchApplicants(); // Refresh list
+            } else {
+                const err = await response.json();
+                throw new Error(err.error || 'Bulk update failed');
+            }
+        } catch (error: any) {
+            alert('Error: ' + error.message);
+        } finally {
+            setBulkUpdating(false);
         }
     };
 
@@ -635,14 +675,30 @@ export default function ApplicationsPage() {
                         <div className="flex gap-3">
                             <Button
                                 onClick={() => setIsBulkModalOpen(true)}
-                                className="bg-ksa-green hover:bg-green-600 text-white h-9 py-0 text-xs"
+                                className="bg-blue-600 hover:bg-blue-700 text-white h-9 py-0 text-xs"
+                                disabled={bulkUpdating || bulkSending}
                             >
                                 <Send size={14} className="mr-2" /> Message Group
+                            </Button>
+                            <Button
+                                onClick={() => handleBulkStatusUpdate('APPROVED')}
+                                className="bg-ksa-green hover:bg-green-600 text-white h-9 py-0 text-xs"
+                                disabled={bulkUpdating || bulkSending}
+                            >
+                                <CheckCircle size={14} className="mr-2" /> Bulk Approve
+                            </Button>
+                            <Button
+                                onClick={() => setIsCorrectionModalOpen(true)}
+                                className="bg-orange-500 hover:bg-orange-600 text-white h-9 py-0 text-xs"
+                                disabled={bulkUpdating || bulkSending}
+                            >
+                                <Shield size={14} className="mr-2" /> Request Correction
                             </Button>
                             <Button
                                 variant="outline"
                                 onClick={() => setSelectedIds(new Set())}
                                 className="border-slate-700 text-slate-300 hover:bg-slate-800 h-9 py-0 text-xs"
+                                disabled={bulkUpdating || bulkSending}
                             >
                                 Clear Selection
                             </Button>
@@ -696,6 +752,47 @@ export default function ApplicationsPage() {
                                     disabled={!bulkSubject || !bulkBody || bulkSending}
                                 >
                                     <Send size={16} className="mr-2" /> Send to Group
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+            {/* Bulk Correction Modal */}
+            {isCorrectionModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <Card className="w-full max-w-lg shadow-2xl border-none">
+                        <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row justify-between items-center py-5">
+                            <div>
+                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                                    <Shield size={22} className="text-amber-500" /> Bulk Correction Request
+                                </h3>
+                                <p className="text-[10px] text-slate-400 font-black uppercase mt-1">Sending to {selectedIds.size} Selected Students</p>
+                            </div>
+                            <button onClick={() => setIsCorrectionModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-2">
+                                <X size={24} />
+                            </button>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-5">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-slate-500 uppercase">Reason for Correction (Required)</Label>
+                                <textarea
+                                    className="w-full p-4 text-sm border-slate-200 rounded-xl focus:ring-amber-500 min-h-[120px] bg-slate-50 focus:bg-white transition-all shadow-inner"
+                                    placeholder="E.g. Your PDF is missing the required National ID scan. Please re-upload a single merged PDF containing all documents."
+                                    value={correctionNote}
+                                    onChange={(e) => setCorrectionNote(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <Button variant="outline" className="flex-1 h-11 font-bold" onClick={() => setIsCorrectionModalOpen(false)}>Cancel</Button>
+                                <Button
+                                    className="flex-1 bg-amber-600 hover:bg-amber-700 font-black h-11 shadow-lg shadow-amber-200"
+                                    onClick={() => handleBulkStatusUpdate('NEEDS_CORRECTION', correctionNote)}
+                                    isLoading={bulkUpdating}
+                                    disabled={bulkUpdating || !correctionNote}
+                                >
+                                    {bulkUpdating ? 'Processing...' : `Request Corrections`}
                                 </Button>
                             </div>
                         </CardContent>

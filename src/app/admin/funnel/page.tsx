@@ -6,7 +6,8 @@ import { Button, Card, CardContent, CardHeader, Label } from '@/components/ui/co
 import {
     Activity, Users, FileWarning, CheckCircle2,
     ArrowRight, Bell, Loader2, FileCheck, Filter,
-    ChevronRight, Mail, User, X, Phone, GraduationCap, TrendingUp
+    ChevronRight, Mail, User, X, Phone, GraduationCap, TrendingUp,
+    Square, CheckSquare, Shield, CheckCircle
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -31,7 +32,15 @@ export default function FunnelDashboard() {
     const [data, setData] = useState<DashData | null>(null);
     const [loading, setLoading] = useState(true);
     const [nudging, setNudging] = useState(false);
+    const [bulking, setBulking] = useState(false);
     const [session, setSession] = useState<any>(null);
+
+    // Selection State
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    // Correction Modal State
+    const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
+    const [correctionNote, setCorrectionNote] = useState('');
 
     // Nudge Modal State
     const [isNudgeModalOpen, setIsNudgeModalOpen] = useState(false);
@@ -105,6 +114,60 @@ export default function FunnelDashboard() {
         }
     };
 
+    const toggleSelectAll = () => {
+        if (!data) return;
+        if (selectedIds.size === data.priorityQueue.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(data.priorityQueue.map(a => a.id)));
+        }
+    };
+
+    const toggleSelect = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const handleBulkStatusUpdate = async (status: string, note?: string) => {
+        if (selectedIds.size === 0 || !session) return;
+        setBulking(true);
+
+        try {
+            const response = await fetch('/api/admin/bulk-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    applicantIds: Array.from(selectedIds),
+                    status,
+                    adminNote: note
+                })
+            });
+
+            if (response.ok) {
+                alert(`Successfully updated ${selectedIds.size} applicants!`);
+                setSelectedIds(new Set());
+                setIsCorrectionModalOpen(false);
+                setCorrectionNote('');
+                fetchStats(); // Refresh local data
+            } else {
+                const err = await response.json();
+                throw new Error(err.error || 'Bulk update failed');
+            }
+        } catch (error: any) {
+            alert('Error: ' + error.message);
+        } finally {
+            setBulking(false);
+        }
+    };
+
     if (loading || !data) return <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-ksa-green" size={40} /></div>;
 
     return (
@@ -128,6 +191,43 @@ export default function FunnelDashboard() {
                     </Button>
                 </div>
             </div>
+
+            {/* BULK ACTIONS TOOLBAR */}
+            {selectedIds.size > 0 && (
+                <div className="bg-slate-900 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between animate-in slide-in-from-top-4 duration-300">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-ksa-green/20 text-ksa-green px-3 py-1 rounded-full text-xs font-black">
+                            {selectedIds.size} SELECTED
+                        </div>
+                        <p className="text-sm font-medium text-slate-300">Apply a bulk action to the selected applicants.</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="primary"
+                            className="bg-ksa-green hover:bg-green-600 h-9 text-xs"
+                            onClick={() => handleBulkStatusUpdate('APPROVED')}
+                            disabled={bulking}
+                        >
+                            <CheckCircle size={16} className="mr-2" /> Bulk Approve
+                        </Button>
+                        <Button
+                            variant="primary"
+                            className="bg-amber-600 hover:bg-amber-700 h-9 text-xs"
+                            onClick={() => setIsCorrectionModalOpen(true)}
+                            disabled={bulking}
+                        >
+                            <Shield size={16} className="mr-2" /> Request Correction
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="h-9 text-xs hover:bg-white/10"
+                            onClick={() => setSelectedIds(new Set())}
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* KPI GRID */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -175,6 +275,15 @@ export default function FunnelDashboard() {
                             <table className="w-full text-sm">
                                 <thead className="bg-slate-50/50 text-slate-400 uppercase text-[10px] font-black tracking-widest border-b border-slate-100">
                                     <tr>
+                                        <th className="px-4 py-4 text-center w-12">
+                                            <button onClick={toggleSelectAll} className="p-1 hover:bg-slate-200 rounded transition-colors text-slate-400">
+                                                {selectedIds.size > 0 && selectedIds.size === data.priorityQueue.length ? (
+                                                    <CheckSquare size={16} className="text-ksa-green" />
+                                                ) : (
+                                                    <Square size={16} />
+                                                )}
+                                            </button>
+                                        </th>
                                         <th className="px-6 py-4 text-left font-black">Applicant</th>
                                         <th className="px-6 py-4 text-left font-black">Stage</th>
                                         <th className="px-6 py-4 text-left font-black">Contact</th>
@@ -184,7 +293,14 @@ export default function FunnelDashboard() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 bg-white">
                                     {data.priorityQueue.map((app) => (
-                                        <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <tr key={app.id} className={`hover:bg-slate-50/50 transition-colors group ${selectedIds.has(app.id) ? 'bg-ksa-green/5' : ''}`}>
+                                            <td className="px-4 py-4 text-center" onClick={(e) => toggleSelect(app.id, e)}>
+                                                {selectedIds.has(app.id) ? (
+                                                    <CheckSquare size={18} className="text-ksa-green inline" />
+                                                ) : (
+                                                    <Square size={18} className="text-slate-300 inline group-hover:text-slate-400" />
+                                                )}
+                                            </td>
                                             <td className="px-6 py-4 cursor-pointer" onClick={() => router.push(`/admin/applications/${app.id}`)}>
                                                 <div className="font-bold text-slate-900 group-hover:text-ksa-green transition-colors">{app.full_name}</div>
                                                 <div className="text-[10px] text-slate-400 font-mono">{app.national_id}</div>
@@ -344,6 +460,53 @@ export default function FunnelDashboard() {
                             <p className="text-[9px] text-center text-slate-400 font-medium tracking-tight">
                                 Note: Emails will be sent from onboarding@resend.dev until domain is verified.
                             </p>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+            {/* Bulk Correction Modal */}
+            {isCorrectionModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <Card className="w-full max-w-lg shadow-2xl border-none">
+                        <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row justify-between items-center py-5">
+                            <div>
+                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                                    <Shield size={22} className="text-amber-500" /> Bulk Correction Request
+                                </h3>
+                                <p className="text-[10px] text-slate-400 font-black uppercase mt-1">Sending to {selectedIds.size} Selected Students</p>
+                            </div>
+                            <button onClick={() => setIsCorrectionModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-2">
+                                <X size={24} />
+                            </button>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-5">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-slate-500 uppercase">Reason for Correction (Required)</Label>
+                                <p className="text-[10px] text-slate-400 leading-relaxed mb-3">This note will be visible to all selected applicants on their status portal.</p>
+                                <textarea
+                                    className="w-full p-4 text-sm border-slate-200 rounded-xl focus:ring-amber-500 min-h-[120px] bg-slate-50 focus:bg-white transition-all shadow-inner"
+                                    placeholder="E.g. Your PDF is missing the required National ID scan. Please re-upload a single merged PDF containing all documents."
+                                    value={correctionNote}
+                                    onChange={(e) => setCorrectionNote(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <Button variant="outline" className="flex-1 h-11 font-bold" onClick={() => setIsCorrectionModalOpen(false)}>Cancel Action</Button>
+                                <Button
+                                    className="flex-1 bg-amber-600 hover:bg-amber-700 font-black h-11 shadow-lg shadow-amber-200"
+                                    onClick={() => handleBulkStatusUpdate('NEEDS_CORRECTION', correctionNote)}
+                                    isLoading={bulking}
+                                    disabled={bulking || !correctionNote}
+                                >
+                                    {bulking ? 'Processing...' : `Request Corrections`}
+                                </Button>
+                            </div>
+                            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                <p className="text-[9px] text-blue-700 font-bold uppercase tracking-tighter text-center">
+                                    Note: All selected applicants will be moved to "Needs Correction" and notified via email.
+                                </p>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
