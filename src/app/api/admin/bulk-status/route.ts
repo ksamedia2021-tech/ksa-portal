@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
         if (dbError) {
             console.error('Bulk Update DB Error:', dbError);
-            return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
+            return NextResponse.json({ error: `Database update failed: ${dbError.message} (${dbError.code})` }, { status: 500 });
         }
 
         // 2. Send emails if status is NEEDS_CORRECTION
@@ -82,6 +82,19 @@ export async function POST(req: NextRequest) {
             const failures = results.filter(r => r.status === 'rejected');
             if (failures.length > 0) {
                 console.error(`Bulk Email Failures: ${failures.length} out of ${applicantIds.length}`);
+            }
+
+            // 2b. Record messages in database so student can see them in portal
+            try {
+                const messageRecords = updated.map(app => ({
+                    applicant_id: app.id,
+                    subject: 'Application Correction Needed',
+                    body: adminNote,
+                    sent_by: 'Admissions Office'
+                }));
+                await supabaseAdmin.from('application_messages').insert(messageRecords);
+            } catch (msgError) {
+                console.error('Failed to save messages to DB:', msgError);
             }
         }
 
