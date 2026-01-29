@@ -299,7 +299,7 @@ export default function ApplicationsPage() {
                     </div>
                 </div>
                 <div className="flex gap-2 items-center">
-                    <Button variant="outline" onClick={fetchApplicants} disabled={loading}>
+                    <Button variant="outline" onClick={() => fetchApplicants()} disabled={loading}>
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Refresh"}
                     </Button>
                     <Button variant="outline" onClick={exportToCSV} disabled={filteredApplicants.length === 0}>
