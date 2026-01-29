@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { chunkArray } from '@/lib/utils';
 import { verifyAdmin } from '@/lib/admin-auth-server';
 import { Resend } from 'resend';
 
@@ -25,19 +26,34 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing status' }, { status: 400 });
         }
 
-        // 1. Update records in Supabase
-        const { data: updated, error: dbError } = await supabaseAdmin
-            .from('applicants')
-            .update({
-                status: status,
-                admin_note: status === 'NEEDS_CORRECTION' ? adminNote : null
-            })
-            .in('id', applicantIds)
-            .select('id, email, full_name');
+        // 1. Update records in Supabase (BATTERED / CHUNKED to avoid URL limits)
+        const chunks = chunkArray(applicantIds, 50);
+        const updated: any[] = [];
+        const errors: any[] = [];
 
-        if (dbError) {
-            console.error('Bulk Update DB Error:', dbError);
-            return NextResponse.json({ error: `Database update failed: ${dbError.message} (${dbError.code})` }, { status: 500 });
+        for (const chunk of chunks) {
+            const { data, error: dbError } = await supabaseAdmin
+                .from('applicants')
+                .update({
+                    status: status,
+                    admin_note: status === 'NEEDS_CORRECTION' ? adminNote : null
+                })
+                .in('id', chunk)
+                .select('id, email, full_name');
+
+            if (dbError) {
+                console.error('Batch Update DB Error:', dbError);
+                errors.push(dbError);
+            } else if (data) {
+                updated.push(...data);
+            }
+        }
+
+        if (updated.length === 0 && errors.length > 0) {
+            const firstError = errors[0];
+            return NextResponse.json({
+                error: `Database update failed: ${firstError.message} (${firstError.code})`
+            }, { status: 500 });
         }
 
         // 2. Send emails if status is NEEDS_CORRECTION

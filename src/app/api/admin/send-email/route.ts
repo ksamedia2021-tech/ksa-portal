@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { verifyAdmin } from '@/lib/admin-auth-server';
+import { chunkArray } from '@/lib/utils';
 
 // Initialize Clients
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -21,14 +22,25 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Recipient list is empty' }, { status: 400 });
         }
 
-        // 2. Fetch Recipient Details
-        const { data: applicants, error: fetchError } = await supabaseAdmin
-            .from('applicants')
-            .select('id, email, full_name')
-            .in('id', applicantIds);
+        // 2. Fetch Recipient Details (CHUNKED to avoid URL limits)
+        const chunks = chunkArray(applicantIds, 50);
+        const applicants: any[] = [];
 
-        if (fetchError || !applicants) {
-            return NextResponse.json({ error: 'Failed to fetch recipients' }, { status: 500 });
+        for (const chunk of chunks) {
+            const { data, error: fetchError } = await supabaseAdmin
+                .from('applicants')
+                .select('id, email, full_name')
+                .in('id', chunk);
+
+            if (fetchError) {
+                console.error('Batch Fetch Error:', fetchError);
+                return NextResponse.json({ error: 'Failed to fetch some recipients' }, { status: 500 });
+            }
+            if (data) applicants.push(...data);
+        }
+
+        if (applicants.length === 0) {
+            return NextResponse.json({ error: 'No valid applicants found' }, { status: 404 });
         }
 
         const emails = applicants.map(app => ({
