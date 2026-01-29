@@ -26,7 +26,7 @@ type Applicant = {
     ip_address: string | null;
     device_type: string | null;
     preferred_campus: string | null;
-    county_of_recidence: string | null;
+    county_of_residence: string | null;
     highest_qualification: string | null;
     email_sent: boolean;
     admin_note: string | null;
@@ -224,7 +224,7 @@ export default function ApplicationsPage() {
             app.national_id,
             app.course_track,
             app.preferred_campus || 'N/A',
-            app.county_of_recidence || 'N/A',
+            app.county_of_residence || 'N/A',
             app.highest_qualification || 'N/A',
             app.kcse_mean_grade || '-',
             app.calculated_age,
@@ -450,7 +450,7 @@ export default function ApplicationsPage() {
                                                 {app.preferred_campus || '-'}
                                             </td>
                                             <td className="px-6 py-4 text-xs">
-                                                {app.county_of_recidence || 'N/A'}
+                                                {app.county_of_residence || 'N/A'}
                                             </td>
                                             <td className="px-6 py-4 text-xs font-mono">
                                                 {app.calculated_age}
@@ -495,7 +495,7 @@ export default function ApplicationsPage() {
                                                                         <div className="p-2 bg-orange-50 rounded-lg text-orange-600"><MapPin size={14} /></div>
                                                                         <div>
                                                                             <p className="text-[10px] text-slate-400 font-bold uppercase">County of Residence</p>
-                                                                            <p className="text-xs font-medium">{app.county_of_recidence || 'N/A'}</p>
+                                                                            <p className="text-xs font-medium">{app.county_of_residence || 'N/A'}</p>
                                                                         </div>
                                                                     </div>
                                                                 </div>

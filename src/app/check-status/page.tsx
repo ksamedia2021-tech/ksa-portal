@@ -54,7 +54,7 @@ export default function CheckStatusPage() {
                     email: data.email,
                     phoneNumber: data.phone_number,
                     nationalId: data.national_id,
-                    county: data.county_of_recidence || '',
+                    county: data.county_of_residence || '',
                     dob: data.dob,
                     courseTrack: data.course_track,
                     highestQualification: data.highest_qualification || '',
@@ -305,7 +305,7 @@ export default function CheckStatusPage() {
                                             <p><span className="font-semibold">Phone:</span> {app.phone_number}</p>
                                             <p><span className="font-semibold">National ID:</span> {app.national_id}</p>
                                             <p><span className="font-semibold">DOB:</span> {new Date(app.dob).toLocaleDateString()}</p>
-                                            <p><span className="font-semibold">County:</span> {app.county_of_recidence}</p>
+                                            <p><span className="font-semibold">County:</span> {app.county_of_residence}</p>
                                         </div>
                                         <div>
                                             <p className="text-xs text-slate-500 uppercase font-bold">Academic Info</p>

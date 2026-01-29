@@ -39,7 +39,7 @@ export async function POST(request: Request) {
             full_name: updates.fullName,
             email: updates.email,
             phone_number: updates.phoneNumber,
-            county_of_recidence: updates.county,
+            county_of_residence: updates.county,
             dob: updates.dob,
             calculated_age: updates.calculatedAge,
             course_track: updates.courseTrack,

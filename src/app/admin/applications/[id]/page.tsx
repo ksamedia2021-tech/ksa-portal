@@ -199,7 +199,7 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
                         <DetailRow label="National ID" value={app.national_id} />
                         <DetailRow label="Date of Birth" value={new Date(app.dob).toLocaleDateString()} />
                         <DetailRow label="Age" value={`${app.calculated_age} Years`} />
-                        <DetailRow label="County" value={app.county_of_recidence || 'N/A'} />
+                        <DetailRow label="County" value={app.county_of_residence || 'N/A'} />
                     </CardContent>
                 </Card>
 
