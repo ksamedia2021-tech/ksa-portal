@@ -26,11 +26,11 @@ export async function POST(request: Request) {
             .maybeSingle();
 
         if (error) {
-            // PGRST116 means no rows found, which is not an error for us
-            if (error.code === 'PGRST116') {
-                return NextResponse.json({ found: false, data: null });
-            }
             throw error;
+        }
+
+        if (!data) {
+            return NextResponse.json({ found: false, data: null });
         }
 
         // Fetch messages for this applicant

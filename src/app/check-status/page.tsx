@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button, Input, Card, CardHeader, CardContent, Label } from '@/components/ui/common';
-import { ArrowRight, Download, CheckCircle, XCircle, AlertTriangle, Loader2, History, MessageSquare } from 'lucide-react';
+import { ArrowRight, Download, CheckCircle, XCircle, AlertTriangle, Loader2, History, MessageSquare, Info } from 'lucide-react';
 import StepBioData from '@/components/StepBioData';
 import StepDetails from '@/components/StepDetails';
 import { FormUpload } from '@/components/FormUpload';
@@ -348,15 +348,27 @@ export default function CheckStatusPage() {
                             {/* Form Upload Section */}
                             {!app.submitted_form_path && (
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
-                                        <AlertTriangle size={18} />
-                                        <p className="text-[10px] font-bold uppercase tracking-tight leading-loose">
+                                    <div className="flex flex-col gap-3 text-left bg-blue-50 p-4 rounded-xl border border-blue-200">
+                                        <div className="flex items-center gap-2 text-blue-700">
+                                            <Info size={18} className="shrink-0" />
+                                            <p className="font-bold text-sm uppercase tracking-wider">Document Upload Instructions</p>
+                                        </div>
+                                        <div className="text-[11px] text-slate-700 leading-relaxed">
                                             Please upload a <strong>single PDF file</strong> containing these documents in order:
-                                            <br />
-                                            1. Course Application Form + 2. KCSE Certificate + 3. Leaving Certificate + 4. National ID Card + 5. Birth Certificate + 6. Other relevant certificates.
-                                            <br />
-                                            (Max size: 5MB)
-                                        </p>
+                                            <ol className="mt-2 space-y-1 list-decimal list-inside font-medium">
+                                                <li>Course Application Form</li>
+                                                <li>KCSE Certificate</li>
+                                                <li>Leaving Certificate</li>
+                                                <li>National ID Card</li>
+                                                <li>Birth Certificate</li>
+                                                <li>Payment Notification (M-Pesa message screenshot or Bank Slip)</li>
+                                                <li>Other relevant certificates</li>
+                                            </ol>
+                                        </div>
+                                        <div className="pt-2 border-t border-blue-100 flex justify-between items-center text-[10px] font-black text-blue-600 uppercase">
+                                            <span>Format: PDF Only</span>
+                                            <span>Max Size: 5MB</span>
+                                        </div>
                                     </div>
                                     <FormUpload
                                         referenceId={app.id}
